@@ -1,8 +1,16 @@
 // src/lib/openrouter.ts
 
+// NOTE: Do NOT add response_format: json_object here — many free models
+// (especially Gemma via Google AI Studio) reject that parameter with a 400.
+// JSON output is enforced via system prompt instead, and cleanAndParseJSON()
+// handles any markdown/code-fence wrapping in the response.
+//
+// NOTE ON MODEL IDs: Hardcoded ":free" model IDs (e.g. google/gemma-3-27b-it:free)
+// frequently return 404 "No endpoints found" as providers rotate. Use OpenRouter's
+// own smart routers instead — they always pick the best currently-active free model.
 const MODELS = [
-  "google/gemma-4-26b-a4b-it:free",
-  "openrouter/free" // Automatic routing to active free models (avoids 404s/deprecations)
+  "openrouter/auto",  // Smart router — picks the best available free model automatically
+  "openrouter/free"   // Fallback free router if auto fails
 ];
 
 /**
@@ -62,7 +70,9 @@ export async function queryOpenRouter(prompt: string, systemPrompt: string) {
           },
           body: JSON.stringify({
             model: model,
-            response_format: { type: "json_object" }, // Request JSON output format
+            // NOTE: response_format is intentionally omitted — Gemma and most free
+            // models route via Google AI Studio which does NOT support json_object mode
+            // and returns a 400. JSON is enforced via the system prompt instead.
             messages: [
               {
                 role: "system",
