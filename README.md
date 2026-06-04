@@ -2,8 +2,6 @@
 
 An AI-powered adaptive worksheet generator for Indian school students (LKG – Class 8). Parents and teachers can generate custom practice sheets, grade them manually or via AI PDF upload, and track a student's weak concepts over time.
 
-**Live domain:** [sheetmate.in](https://sheetmate.in) *(MVP v1.0.0)*
-
 ---
 
 ## ✨ Features
