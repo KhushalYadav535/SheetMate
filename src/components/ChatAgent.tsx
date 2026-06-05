@@ -104,7 +104,8 @@ export default function ChatAgent() {
             grade: data.params.grade || "Class 6",
             subject: data.params.subject || "MATH",
             topics: [data.params.topic || "General Topic"],
-            difficulty: data.params.difficulty || "MEDIUM"
+            difficulty: data.params.difficulty || "MEDIUM",
+            includeAnswerKey: !!studentProfileId
           })
         });
 

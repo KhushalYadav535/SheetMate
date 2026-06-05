@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [profileId, setProfileId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [subjectFilter, setSubjectFilter] = useState<string>("ALL");
   
   // App states
   const [loading, setLoading] = useState(true);
@@ -734,6 +735,7 @@ export default function DashboardPage() {
       setProfile(null);
       setWorksheets([]);
       setWeaknesses([]);
+      setSubjectFilter("ALL");
       
       const savedParentPhone = localStorage.getItem("sheetmate_parent_phone");
       if (savedParentPhone) {
@@ -777,6 +779,7 @@ export default function DashboardPage() {
     setWorksheets([]);
     setWeaknesses([]);
     setParentUnlocked(false);
+    setSubjectFilter("ALL");
     setAuthMode("signin");
     router.push("/");
   };
@@ -1660,9 +1663,17 @@ export default function DashboardPage() {
     );
   }
 
-  // Analytics calculations for Parent Dashboard
-  const totalWorksheetsCount = worksheets.length;
-  const gradedWorksheetsCount = worksheets.filter(ws => {
+  // Subject-filtered calculations for Parent Analytics Dashboard
+  const filteredWorksheets = subjectFilter === "ALL" 
+    ? worksheets 
+    : worksheets.filter(ws => ws.subject?.toUpperCase() === subjectFilter.toUpperCase());
+
+  const filteredWeaknesses = subjectFilter === "ALL" 
+    ? weaknesses 
+    : weaknesses.filter(w => w.subject?.toUpperCase() === subjectFilter.toUpperCase());
+
+  const totalWorksheetsCount = filteredWorksheets.length;
+  const gradedWorksheetsCount = filteredWorksheets.filter(ws => {
     if (!ws.attemptsJson) return false;
     try {
       const arr = JSON.parse(ws.attemptsJson);
@@ -1675,7 +1686,7 @@ export default function DashboardPage() {
     ? Math.round((gradedWorksheetsCount / totalWorksheetsCount) * 100) 
     : 0;
 
-  // Gather all attempts for progression chart & average score calculation
+  // Gather graded attempts for progression chart & average score based on filtered worksheets
   const allGradedAttempts: {
     wsId: string;
     topic: string;
@@ -1686,7 +1697,7 @@ export default function DashboardPage() {
     dateStr: string;
   }[] = [];
 
-  worksheets.forEach(ws => {
+  filteredWorksheets.forEach(ws => {
     if (ws.attemptsJson) {
       try {
         const arr = JSON.parse(ws.attemptsJson);
@@ -1719,11 +1730,9 @@ export default function DashboardPage() {
     ? Math.round(allGradedAttempts.reduce((sum, att) => sum + att.percentage, 0) / allGradedAttempts.length)
     : 0;
 
-  // Concept masteries vs focus areas
-  // Strong: successCount > errorCount
-  // Weak: errorCount >= successCount && errorCount > 0
-  const strongConcepts = weaknesses.filter(w => w.successCount > w.errorCount);
-  const weakConcepts = weaknesses.filter(w => w.errorCount >= w.successCount && w.errorCount > 0);
+  // Concept masteries vs focus areas based on filtered weaknesses
+  const strongConcepts = filteredWeaknesses.filter(w => w.successCount > w.errorCount);
+  const weakConcepts = filteredWeaknesses.filter(w => w.errorCount >= w.successCount && w.errorCount > 0);
   
   // Sort strong concepts by successCount descending
   const sortedStrong = [...strongConcepts].sort((a, b) => b.successCount - a.successCount);
@@ -1887,6 +1896,52 @@ export default function DashboardPage() {
               <span style={{ fontSize: "0.75rem", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", padding: "4px 10px", borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
                 Active Session
               </span>
+            </div>
+
+            {/* Subject Filters Tabs */}
+            <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "12px", marginBottom: "24px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
+              {[
+                { id: "ALL", label: "📚 All Subjects" },
+                { id: "MATH", label: "🔢 Math" },
+                { id: "SCIENCE", label: "🔬 Science" },
+                { id: "ENGLISH", label: "📖 English" },
+                { id: "EVS", label: "🌱 EVS" },
+                { id: "HINDI", label: "✍️ Hindi" },
+                { id: "SST", label: "🌍 SST" }
+              ].map(sub => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => setSubjectFilter(sub.id)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    border: "1px solid",
+                    borderColor: subjectFilter === sub.id ? "var(--accent-cyan)" : "rgba(255, 255, 255, 0.08)",
+                    background: subjectFilter === sub.id ? "rgba(6, 182, 212, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                    color: subjectFilter === sub.id ? "#22d3ee" : "var(--text-secondary)",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    transition: "var(--transition-smooth)"
+                  }}
+                  onMouseOver={e => {
+                    if (subjectFilter !== sub.id) {
+                      e.currentTarget.style.borderColor = "rgba(6, 182, 212, 0.4)";
+                      e.currentTarget.style.background = "rgba(6, 182, 212, 0.05)";
+                    }
+                  }}
+                  onMouseOut={e => {
+                    if (subjectFilter !== sub.id) {
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    }
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
             </div>
 
             {/* Row 1: KPI Cards */}
