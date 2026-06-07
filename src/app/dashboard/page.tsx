@@ -43,6 +43,11 @@ export default function DashboardPage() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [subjectFilter, setSubjectFilter] = useState<string>("ALL");
+
+  // Animated KPI statistics count-ups
+  const [animatedWorksheetsCount, setAnimatedWorksheetsCount] = useState(0);
+  const [animatedGradingRate, setAnimatedGradingRate] = useState(0);
+  const [animatedAverageScore, setAnimatedAverageScore] = useState(0);
   
   // App states
   const [loading, setLoading] = useState(true);
@@ -290,6 +295,77 @@ export default function DashboardPage() {
     }
     loadDashboard();
   }, [profileId]);
+
+  // Count-up animation loops for statistics KPI counters
+  useEffect(() => {
+    if (!parentUnlocked) return;
+
+    // Derived statistics calculations run inside hook scope to prevent block scope ordering issues
+    const filteredW = subjectFilter === "ALL" 
+      ? worksheets 
+      : worksheets.filter(ws => ws.subject?.toUpperCase() === subjectFilter.toUpperCase());
+
+    const totalCount = filteredW.length;
+    
+    const gradedCount = filteredW.filter(ws => {
+      if (!ws.attemptsJson) return false;
+      try {
+        const arr = JSON.parse(ws.attemptsJson);
+        return Array.isArray(arr) && arr.length > 0;
+      } catch (_) {
+        return false;
+      }
+    }).length;
+    const ratePercent = totalCount > 0 ? Math.round((gradedCount / totalCount) * 100) : 0;
+
+    const allPercentageScores: number[] = [];
+    filteredW.forEach(ws => {
+      if (ws.attemptsJson) {
+        try {
+          const arr = JSON.parse(ws.attemptsJson);
+          if (Array.isArray(arr)) {
+            arr.forEach((att: any) => {
+              const score = typeof att.score === "number" ? att.score : (ws.score || 0);
+              const totalMarks = (typeof att.totalMarks === "number" ? att.totalMarks : ws.totalMarks) || 10;
+              const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+              allPercentageScores.push(percentage);
+            });
+          }
+        } catch (_) {}
+      }
+    });
+
+    const averagePercent = allPercentageScores.length > 0
+      ? Math.round(allPercentageScores.reduce((sum, val) => sum + val, 0) / allPercentageScores.length)
+      : 0;
+
+    let active = true;
+    const animateValue = (start: number, end: number, duration: number, setter: (val: number) => void) => {
+      if (start === end) {
+        setter(end);
+        return;
+      }
+      let startTimestamp: number | null = null;
+      const step = (timestamp: number) => {
+        if (!active) return;
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        setter(Math.floor(progress * (end - start) + start));
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    };
+
+    animateValue(0, totalCount, 850, setAnimatedWorksheetsCount);
+    animateValue(0, ratePercent, 850, setAnimatedGradingRate);
+    animateValue(0, averagePercent, 850, setAnimatedAverageScore);
+
+    return () => {
+      active = false;
+    };
+  }, [worksheets, subjectFilter, parentUnlocked]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1947,44 +2023,44 @@ export default function DashboardPage() {
             {/* Row 1: KPI Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "30px" }}>
               {/* Card 1: Total Sheets */}
-              <div className="spotlight-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+              <div className="spotlight-card neobrutalist-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(167, 139, 250, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "var(--accent-purple)", flexShrink: 0 }}>
                   📄
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)" }}>Total Worksheets</p>
-                  <h4 style={{ margin: "4px 0 0 0", fontSize: "1.4rem", fontWeight: 700 }}>{totalWorksheetsCount}</h4>
+                  <h4 style={{ margin: "4px 0 0 0", fontSize: "1.4rem", fontWeight: 700 }}>{animatedWorksheetsCount}</h4>
                 </div>
               </div>
 
               {/* Card 2: Grading Rate */}
-              <div className="spotlight-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+              <div className="spotlight-card neobrutalist-card cyan" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(6, 182, 212, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "var(--accent-cyan)", flexShrink: 0 }}>
                   ✅
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)" }}>Grading Rate</p>
                   <h4 style={{ margin: "4px 0 0 0", fontSize: "1.4rem", fontWeight: 700 }}>
-                    {gradingRatePercent}% <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "var(--text-muted)" }}>({gradedWorksheetsCount}/{totalWorksheetsCount})</span>
+                    {animatedGradingRate}% <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "var(--text-muted)" }}>({gradedWorksheetsCount}/{totalWorksheetsCount})</span>
                   </h4>
                 </div>
               </div>
 
               {/* Card 3: Average Score */}
-              <div className="spotlight-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+              <div className="spotlight-card neobrutalist-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(167, 139, 250, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "var(--accent-purple)", flexShrink: 0 }}>
                   🎯
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)" }}>Average Score</p>
                   <h4 style={{ margin: "4px 0 0 0", fontSize: "1.4rem", fontWeight: 700 }}>
-                    {allGradedAttempts.length > 0 ? `${overallAverageScorePercent}%` : "N/A"}
+                    {allGradedAttempts.length > 0 ? `${animatedAverageScore}%` : "N/A"}
                   </h4>
                 </div>
               </div>
 
               {/* Card 4: Mastery Status */}
-              <div className="spotlight-card" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+              <div className="spotlight-card neobrutalist-card emerald" onMouseMove={handleMouseMove} style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-glow)", borderRadius: "8px", padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "#10b981", flexShrink: 0 }}>
                   🏆
                 </div>
@@ -2088,6 +2164,7 @@ export default function DashboardPage() {
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            className="animate-draw-curve"
                           />
                         </g>
                       );

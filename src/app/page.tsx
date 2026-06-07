@@ -77,6 +77,61 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [studentProfileId]);
 
+  // Scroll Reveal elements trigger
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    const elements = document.querySelectorAll(".scroll-reveal");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, [studentProfileId]);
+
+  // Magnetic hover effect for CTA buttons
+  useEffect(() => {
+    const btns = document.querySelectorAll(".magnetic-btn");
+    const cleanups: (() => void)[] = [];
+
+    btns.forEach((btn) => {
+      const el = btn as HTMLElement;
+      const onMouseMove = (e: MouseEvent) => {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        el.style.transform = `translate(${x * 0.22}px, ${y * 0.22}px) scale(1.03)`;
+        el.style.transition = "transform 0.05s ease-out";
+      };
+
+      const onMouseLeave = () => {
+        el.style.transform = "";
+        el.style.transition = "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
+      };
+
+      el.addEventListener("mousemove", onMouseMove);
+      el.addEventListener("mouseleave", onMouseLeave);
+
+      cleanups.push(() => {
+        el.removeEventListener("mousemove", onMouseMove);
+        el.removeEventListener("mouseleave", onMouseLeave);
+      });
+    });
+
+    return () => {
+      cleanups.forEach((cb) => cb());
+    };
+  }, [studentProfileId]);
+
   const handleLogOut = () => {
     localStorage.removeItem("sheetmate_profile_id");
     setStudentProfileId(null);
@@ -463,13 +518,12 @@ export default function HomePage() {
             )}
             <h1
               style={{
-                fontSize: "clamp(2.4rem, 5.5vw, 3.4rem)",
-                lineHeight: 1.1,
+                fontSize: "clamp(2.6rem, 5.8vw, 3.8rem)",
+                lineHeight: 1.05,
                 marginTop: "16px",
-                marginBottom: "16px",
-                fontFamily: "var(--font-heading)"
+                marginBottom: "16px"
               }}
-              className="gradient-text"
+              className="gradient-text display-typography"
             >
               Tailored worksheets. Aligned to school syllabus.
             </h1>
@@ -479,11 +533,11 @@ export default function HomePage() {
                 : "Create standard curriculum-aligned printable worksheets (Class LKG - Class 8) in seconds. Lock parent analytics & grade sheets via OTP."}
             </p>
           </div>
-
+ 
           <div>
             <button
               type="button"
-              className="btn-primary"
+              className="btn-primary magnetic-btn"
               style={{ padding: "16px 36px", fontSize: "1.05rem", display: "inline-flex", gap: "10px", alignItems: "center" }}
               onClick={() => {
                 const el = document.getElementById("practice-section");
@@ -640,7 +694,7 @@ export default function HomePage() {
           }}
         >
           {/* Feature 1 */}
-          <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(255, 255, 255, 0.03)" }}>
+          <div className="glass-card spotlight-card scroll-reveal" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(255, 255, 255, 0.03)" }}>
             <div style={{ width: "40px", height: "40px", background: "rgba(124, 58, 237, 0.1)", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px", border: "1px solid rgba(124, 58, 237, 0.3)" }}>
               <span style={{ color: "#a78bfa", fontWeight: "bold" }}>01</span>
             </div>
@@ -651,7 +705,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 2 */}
-          <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(255, 255, 255, 0.03)" }}>
+          <div className="glass-card spotlight-card scroll-reveal" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(255, 255, 255, 0.03)" }}>
             <div style={{ width: "40px", height: "40px", background: "rgba(6, 182, 212, 0.1)", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px", border: "1px solid rgba(6, 182, 212, 0.3)" }}>
               <span style={{ color: "#22d3ee", fontWeight: "bold" }}>02</span>
             </div>
@@ -662,7 +716,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 3 */}
-          <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(124, 58, 237, 0.03)" }}>
+          <div className="glass-card spotlight-card scroll-reveal" onMouseMove={handleMouseMove} style={{ padding: "30px", border: "1px solid rgba(124, 58, 237, 0.03)" }}>
             <div style={{ width: "40px", height: "40px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
               <span style={{ color: "#34d399", fontWeight: "bold" }}>03</span>
             </div>
@@ -720,6 +774,7 @@ export default function HomePage() {
             >
               {/* Guest Practice Perks */}
               <div
+                className="scroll-reveal"
                 style={{
                   background: "rgba(255, 255, 255, 0.01)",
                   border: "1px solid rgba(255, 255, 255, 0.03)",
@@ -760,6 +815,7 @@ export default function HomePage() {
 
               {/* Registered Profile Perks */}
               <div
+                className="scroll-reveal"
                 style={{
                   background: "rgba(124, 58, 237, 0.03)",
                   border: "1px solid rgba(124, 58, 237, 0.15)",

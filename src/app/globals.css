@@ -1,5 +1,5 @@
 /* src/app/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Colors */
@@ -22,6 +22,7 @@
   /* Fonts */
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Syne', sans-serif;
   
   /* Layout */
   --radius-sm: 8px;
@@ -565,7 +566,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* 21st.dev Premium Aesthetics */
 
-/* Fading Grid Background Overlay */
+/* Fading Grid Background Overlay with Dot Matrix Intersections */
 .grid-bg-overlay {
   position: fixed;
   inset: 0;
@@ -579,6 +580,105 @@ h1, h2, h3, h4, h5, h6 {
   z-index: -1;
   opacity: 0.85;
 }
+
+.grid-bg-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -0.5px -0.5px;
+  pointer-events: none;
+}
+
+/* Grainy Noise Canvas Overlay */
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  content: "";
+  opacity: 0.025;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Fluid Scroll Reveal Animations */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes slideUpReveal {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal {
+  animation: slideUpReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* SVG Chart Drawing Path Animation */
+@keyframes drawCurve {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-curve {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawCurve 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Awwwards Display Typography Contrast Class */
+.display-typography {
+  font-family: var(--font-display) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* Neobrutalist Stat Card Styling */
+.neobrutalist-card {
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.3) !important;
+  transition: var(--transition-smooth) !important;
+}
+
+.neobrutalist-card:hover {
+  border-color: rgba(124, 58, 237, 0.45) !important;
+  box-shadow: 0 8px 30px -5px rgba(124, 58, 237, 0.25), 0 0 15px rgba(124, 58, 237, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+.neobrutalist-card.cyan:hover {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  box-shadow: 0 8px 30px -5px rgba(6, 182, 212, 0.25), 0 0 15px rgba(6, 182, 212, 0.08) !important;
+}
+
+.neobrutalist-card.emerald:hover {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 8px 30px -5px rgba(16, 185, 129, 0.25), 0 0 15px rgba(16, 185, 129, 0.08) !important;
+}
+
 
 /* Spotlight Hover Card */
 .spotlight-card {
