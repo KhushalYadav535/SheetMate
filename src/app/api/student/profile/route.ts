@@ -1,6 +1,7 @@
 // src/app/api/student/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create the student profile linked to this user
     const profile = await prisma.studentProfile.create({
       data: {
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
         parentPhone: parentPhone || null,
         studentPhone: studentPhone || null,
         username: username.trim(),
-        password: password || ""
+        password: hashedPassword
       }
     });
 
@@ -111,6 +114,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    let hashedPasswordToUpdate = undefined;
     if (password !== undefined) {
       if (password.length < 8) {
         return NextResponse.json({ error: "Password must be at least 8 characters long" }, { status: 400 });
@@ -124,6 +128,7 @@ export async function PUT(req: NextRequest) {
           error: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
         }, { status: 400 });
       }
+      hashedPasswordToUpdate = await bcrypt.hash(password, 10);
     }
 
     const existingProfile = await prisma.studentProfile.findUnique({
@@ -145,7 +150,7 @@ export async function PUT(req: NextRequest) {
         parentPhone: parentPhone !== undefined ? parentPhone : existingProfile.parentPhone,
         studentPhone: studentPhone !== undefined ? studentPhone : existingProfile.studentPhone,
         username: username !== undefined ? username.trim() : existingProfile.username,
-        password: password !== undefined ? password : existingProfile.password
+        password: hashedPasswordToUpdate !== undefined ? hashedPasswordToUpdate : existingProfile.password
       }
     });
 

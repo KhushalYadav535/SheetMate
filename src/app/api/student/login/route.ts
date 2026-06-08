@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +19,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Student username not found." }, { status: 404 });
     }
 
-    // Direct comparison for MVP
-    if (profile.password !== password) {
+    // Secure comparison using bcryptjs
+    const isPasswordCorrect = await bcrypt.compare(password || "", profile.password);
+    if (!isPasswordCorrect) {
       return NextResponse.json({ error: "Incorrect password. Please try again." }, { status: 401 });
     }
 
