@@ -316,7 +316,8 @@ export default function GeneratorWizard({
   }
 
   return (
-    <div className="glass-card" style={{ padding: "32px", width: "100%" }}>
+    <div className="border-beam-card tilt-card" style={{ width: "100%" }}>
+      <div className="border-beam-card-inner wizard-card-inner">
       {/* Step Indicators — 3 steps (board removed, CBSE fixed) */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "28px" }}>
         {[1, 2, 3].map(s => (
@@ -339,19 +340,20 @@ export default function GeneratorWizard({
         ))}
       </div>
 
-      <div style={{ minHeight: "280px" }}>
+      <div className="wizard-step-container">
 
         {/* ── STEP 1: Grade ── */}
         {step === 1 && (
           <div>
-            <div style={{ marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ marginBottom: "4px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
               <h3 style={{ fontSize: "1.2rem" }}>Step 1: Select Grade</h3>
               <span className="glowing-badge">Standard Syllabus</span>
             </div>
             <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: "18px" }}>
               Syllabus is set to standard board curriculum for MVP.
             </p>
-            <div className="selection-grid">
+            {/* Desktop Grade Selection Grid */}
+            <div className="selection-grid hide-mobile">
               {GRADES.map(g => (
                 <div
                   key={g}
@@ -362,6 +364,21 @@ export default function GeneratorWizard({
                   <p style={{ fontWeight: 600, fontSize: "0.95rem" }}>{g}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Mobile Grade Dropdown Selector */}
+            <div className="show-mobile" style={{ marginTop: "8px" }}>
+              <select
+                value={grade}
+                onChange={(e) => handleGradeChange(e.target.value)}
+                className="premium-input"
+              >
+                {GRADES.map(g => (
+                  <option key={g} value={g} style={{ background: "#12121e", color: "#fff" }}>
+                    {g}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         )}
@@ -375,7 +392,8 @@ export default function GeneratorWizard({
             <div style={{
               background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-glow)",
               borderRadius: "8px", padding: "8px 14px", marginBottom: "20px",
-              display: "flex", justifyContent: "space-between", alignItems: "center"
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              flexWrap: "wrap", gap: "8px"
             }}>
               <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                 Curriculum &bull; <strong>{grade}</strong>
@@ -391,18 +409,15 @@ export default function GeneratorWizard({
             {/* Subject picker */}
             <div className="form-group">
               <label className="form-label">Subject</label>
-              <div className="selection-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", marginBottom: "20px" }}>
+              {/* Desktop Subject Grid */}
+              <div className="selection-grid hide-mobile" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", marginBottom: "20px" }}>
                 {SUBJECTS.map(sub => {
-                  // Visibility rules — show all subjects that make sense for the grade
                   const isEarlyGrade = ["LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"].includes(grade);
                   const isSSTGrade = ["Class 6", "Class 7", "Class 8"].includes(grade);
 
-                  // EVS only for LKG–Class 5; SST only for Class 6–8
-                  // Science and Hindi are now available for ALL grades (chapters added)
                   if (sub.id === "EVS" && !isEarlyGrade) return null;
                   if (sub.id === "SST" && !isSSTGrade) return null;
 
-                  // Check chapters available in flat data
                   const availableTopics = CURRICULUM_DATA[grade]?.[sub.id] || [];
                   const isEmpty = availableTopics.length === 0;
 
@@ -419,6 +434,34 @@ export default function GeneratorWizard({
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Mobile Subject Dropdown Selector */}
+              <div className="show-mobile" style={{ marginBottom: "20px" }}>
+                <select
+                  value={subject}
+                  onChange={(e) => handleSubjectChange(e.target.value as Subject)}
+                  className="premium-input"
+                >
+                  {SUBJECTS.map(sub => {
+                    const isEarlyGrade = ["LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"].includes(grade);
+                    const isSSTGrade = ["Class 6", "Class 7", "Class 8"].includes(grade);
+
+                    if (sub.id === "EVS" && !isEarlyGrade) return null;
+                    if (sub.id === "SST" && !isSSTGrade) return null;
+
+                    const availableTopics = CURRICULUM_DATA[grade]?.[sub.id] || [];
+                    const isEmpty = availableTopics.length === 0;
+
+                    if (isEmpty) return null;
+
+                    return (
+                      <option key={sub.id} value={sub.id} style={{ background: "#12121e", color: "#fff" }}>
+                        {sub.name}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
 
@@ -502,23 +545,45 @@ export default function GeneratorWizard({
 
             <div className="form-group" style={{ marginBottom: "24px" }}>
               <label className="form-label">Difficulty Level</label>
-              <div style={{ display: "flex", gap: "12px" }}>
+              {/* Desktop Slider Selector */}
+              <div className="slider-tabs-container hide-mobile">
+                <div
+                  className={`slider-tab-indicator ${difficulty === "HARD" ? "cyan-gradient" : ""}`}
+                  style={{
+                    width: "calc(33.33% - 4px)",
+                    transform:
+                      difficulty === "EASY"
+                        ? "translateX(0)"
+                        : difficulty === "MEDIUM"
+                        ? "translateX(calc(100% + 2px))"
+                        : "translateX(calc(200% + 4px))"
+                  }}
+                />
                 {["EASY", "MEDIUM", "HARD"].map(diff => (
                   <button
                     key={diff}
                     type="button"
-                    className="btn-secondary"
-                    style={{
-                      flex: 1,
-                      borderColor: difficulty === diff ? "var(--accent-purple)" : "var(--border-glow)",
-                      background: difficulty === diff ? "rgba(124, 58, 237, 0.15)" : "transparent",
-                      color: difficulty === diff ? "var(--text-primary)" : "var(--text-secondary)"
-                    }}
+                    className={`slider-tab-btn ${difficulty === diff ? "active" : ""}`}
                     onClick={() => setDifficulty(diff)}
                   >
                     {diff}
                   </button>
                 ))}
+              </div>
+
+              {/* Mobile Difficulty Dropdown Selector */}
+              <div className="show-mobile">
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  className="premium-input"
+                >
+                  {["EASY", "MEDIUM", "HARD"].map(diff => (
+                    <option key={diff} value={diff} style={{ background: "#12121e", color: "#fff" }}>
+                      {diff}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -624,5 +689,6 @@ export default function GeneratorWizard({
         )}
       </div>
     </div>
+  </div>
   );
 }

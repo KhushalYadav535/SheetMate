@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ThreeBackground from "@/components/ThreeBackground";
 import ChatAgent from "@/components/ChatAgent";
+import GradingMark from "@/components/GradingMark";
 
 interface WorksheetRecord {
   id: string;
@@ -2772,7 +2773,8 @@ export default function DashboardPage() {
                                   const isCorrect = graderScores[key] !== false;
                                   return (
                                     <div key={qIdx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.01)", padding: "10px 14px", borderRadius: "6px", border: isCorrect ? "1px solid rgba(16, 185, 129, 0.15)" : "1px solid rgba(239, 68, 68, 0.25)" }}>
-                                      <div style={{ flex: 1 }}>
+                                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <GradingMark type={graderScores[key] === true ? "correct" : graderScores[key] === false ? "incorrect" : null} />
                                         <span style={{ fontSize: "0.85rem" }}>{item.left} &rarr; <strong>{item.right}</strong></span>
                                       </div>
                                       <div style={{ display: "flex", gap: "6px" }}>
@@ -2820,11 +2822,14 @@ export default function DashboardPage() {
                                   const isCorrect = graderScores[key] !== false;
                                   return (
                                     <div key={qIdx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.01)", padding: "10px 14px", borderRadius: "6px", border: isCorrect ? "1px solid rgba(16, 185, 129, 0.15)" : "1px solid rgba(239, 68, 68, 0.25)" }}>
-                                      <div style={{ flex: 1, marginRight: "12px" }}>
-                                        <p style={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>{q.sentence}</p>
-                                        <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-                                          Answer Box: <strong style={{ color: "#34d399" }}>{q.answer}</strong>
-                                        </p>
+                                      <div style={{ flex: 1, marginRight: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <GradingMark type={graderScores[key] === true ? "correct" : graderScores[key] === false ? "incorrect" : null} />
+                                        <div style={{ flex: 1 }}>
+                                          <p style={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>{q.sentence}</p>
+                                          <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                            Answer Box: <strong style={{ color: "#34d399" }}>{q.answer}</strong>
+                                          </p>
+                                        </div>
                                       </div>
                                       <div style={{ display: "flex", gap: "6px" }}>
                                         <button
@@ -2871,11 +2876,14 @@ export default function DashboardPage() {
                                   const isCorrect = graderScores[key] !== false;
                                   return (
                                     <div key={qIdx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.01)", padding: "10px 14px", borderRadius: "6px", border: isCorrect ? "1px solid rgba(16, 185, 129, 0.15)" : "1px solid rgba(239, 68, 68, 0.25)" }}>
-                                      <div style={{ flex: 1, marginRight: "12px" }}>
-                                        <p style={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>[ {q.words?.join(", ")} ]</p>
-                                        <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-                                          Odd One: <strong style={{ color: "#34d399" }}>{q.answer}</strong> ({q.explanation})
-                                        </p>
+                                      <div style={{ flex: 1, marginRight: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <GradingMark type={graderScores[key] === true ? "correct" : graderScores[key] === false ? "incorrect" : null} />
+                                        <div style={{ flex: 1 }}>
+                                          <p style={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>[ {q.words?.join(", ")} ]</p>
+                                          <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                            Odd One: <strong style={{ color: "#34d399" }}>{q.answer}</strong> ({q.explanation})
+                                          </p>
+                                        </div>
                                       </div>
                                       <div style={{ display: "flex", gap: "6px" }}>
                                         <button
@@ -2929,32 +2937,37 @@ export default function DashboardPage() {
                                 return (
                                   <div key={q.id} style={{ background: "rgba(255,255,255,0.01)", padding: "12px 16px", borderRadius: "8px", border: isCorrect ? "1px solid rgba(16, 185, 129, 0.15)" : "1px solid rgba(239, 68, 68, 0.25)" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px" }}>
-                                      <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)" }}>{q.text}</p>
-                                        {q.type === "MCQ" && q.options && (
-                                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "8px", paddingLeft: "10px" }}>
-                                            {q.options.map((opt: any, oIdx: number) => (
-                                              <div key={oIdx} style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                                                {String.fromCharCode(97 + oIdx)}) {opt}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                        <div style={{ marginTop: "10px", background: "rgba(16,185,129,0.03)", border: "1px solid rgba(16,185,129,0.1)", borderRadius: "6px", padding: "8px 12px" }}>
-                                          <p style={{ fontSize: "0.8rem", color: "#a7f3d0" }}>
-                                            <strong>Correct Answer:</strong> {q.answer}
-                                          </p>
-                                          {q.solutionExplanation && (
-                                            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-                                              <strong>Explanation:</strong> {q.solutionExplanation}
+                                      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                                        <div style={{ marginTop: "4px" }}>
+                                          <GradingMark type={graderScores[key] === true ? "correct" : graderScores[key] === false ? "incorrect" : null} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)" }}>{q.text}</p>
+                                          {q.type === "MCQ" && q.options && (
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "8px", paddingLeft: "10px" }}>
+                                              {q.options.map((opt: any, oIdx: number) => (
+                                                <div key={oIdx} style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                                                  {String.fromCharCode(97 + oIdx)}) {opt}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                          <div style={{ marginTop: "10px", background: "rgba(16,185,129,0.03)", border: "1px solid rgba(16,185,129,0.1)", borderRadius: "6px", padding: "8px 12px" }}>
+                                            <p style={{ fontSize: "0.8rem", color: "#a7f3d0" }}>
+                                              <strong>Correct Answer:</strong> {q.answer}
                                             </p>
+                                            {q.solutionExplanation && (
+                                              <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                                <strong>Explanation:</strong> {q.solutionExplanation}
+                                              </p>
+                                            )}
+                                          </div>
+                                          {q.subtopic && (
+                                            <span style={{ display: "inline-block", fontSize: "0.65rem", color: "var(--accent-purple)", background: "rgba(124, 58, 237, 0.08)", border: "1px solid rgba(124, 58, 237, 0.15)", borderRadius: "10px", padding: "2px 8px", marginTop: "8px" }}>
+                                              Concept: {q.subtopic}
+                                            </span>
                                           )}
                                         </div>
-                                        {q.subtopic && (
-                                          <span style={{ display: "inline-block", fontSize: "0.65rem", color: "var(--accent-purple)", background: "rgba(124, 58, 237, 0.08)", border: "1px solid rgba(124, 58, 237, 0.15)", borderRadius: "10px", padding: "2px 8px", marginTop: "8px" }}>
-                                            Concept: {q.subtopic}
-                                          </span>
-                                        )}
                                       </div>
 
                                       <div style={{ display: "flex", gap: "6px" }}>
