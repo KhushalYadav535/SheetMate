@@ -13,17 +13,59 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Fetch active profiles associated with the parent's mobile number
+    const isEmail = contact.includes("@");
+    let searchConditions: any[] = [];
+
+    if (isEmail) {
+      searchConditions = [
+        { parentEmail: { equals: contact, mode: "insensitive" } }
+      ];
+    } else {
+      // Extract digits to handle formatting differences
+      const digits = contact.replace(/\D/g, "");
+      if (digits.length >= 10) {
+        const localNum = digits.slice(-10);
+        searchConditions = [
+          { parentPhone: { contains: localNum } },
+          { parentPhone: { equals: contact, mode: "insensitive" } },
+          { parentEmail: { equals: contact, mode: "insensitive" } }
+        ];
+      } else if (digits.length > 0) {
+        searchConditions = [
+          { parentPhone: { contains: digits } },
+          { parentPhone: { equals: contact, mode: "insensitive" } },
+          { parentEmail: { equals: contact, mode: "insensitive" } }
+        ];
+      } else {
+        searchConditions = [
+          { parentPhone: { equals: contact, mode: "insensitive" } },
+          { parentEmail: { equals: contact, mode: "insensitive" } }
+        ];
+      }
+    }
+
+    // Fetch active and recently soft-deleted profiles associated with the parent's mobile number or email
     const profiles = await prisma.studentProfile.findMany({
       where: {
-        parentPhone: { equals: contact, mode: "insensitive" }
+        AND: [
+          {
+            OR: searchConditions
+          },
+          {
+            OR: [
+              { deletedAt: null },
+              { deletedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
+            ]
+          }
+        ]
       },
       orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
         grade: true,
-        board: true
+        board: true,
+        deletedAt: true
       }
     });
 

@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = "https://sheetmate.app";
+  const baseUrl = "https://practicemitra.in";
 
   return {
     rules: {

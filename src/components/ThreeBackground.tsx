@@ -1,200 +1,114 @@
 // src/components/ThreeBackground.tsx
 "use client";
-import React, { useRef, useState, useMemo, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import React, { useEffect, useRef } from "react";
 
-function ConstellationMesh() {
-  const pointsRef = useRef<THREE.Points>(null);
-  const linesRef = useRef<THREE.LineSegments>(null);
-
-  const count = 70; // Perfect count for smooth, high-FPS constellation renders
-
-  // Initial positions and velocities
-  const { positions, velocities, initialPos } = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const vel = new Float32Array(count * 3);
-    const init = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      // Position spread
-      const x = (Math.random() - 0.5) * 8.5;
-      const y = (Math.random() - 0.5) * 6.5;
-      const z = (Math.random() - 0.5) * 4.0;
-      pos[i * 3] = x;
-      pos[i * 3 + 1] = y;
-      pos[i * 3 + 2] = z;
-      
-      init[i * 3] = x;
-      init[i * 3 + 1] = y;
-      init[i * 3 + 2] = z;
-
-      // Velocities
-      vel[i * 3] = (Math.random() - 0.5) * 0.22;
-      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.22;
-      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.12;
-    }
-    return { positions: pos, velocities: vel, initialPos: init };
-  }, []);
-
-  // Pre-calculate index connection pairs at start (for close particles)
-  const lineIndices = useMemo(() => {
-    const indices: number[] = [];
-    for (let i = 0; i < count; i++) {
-      let connections = 0;
-      for (let j = i + 1; j < count; j++) {
-        const dx = initialPos[i * 3] - initialPos[j * 3];
-        const dy = initialPos[i * 3 + 1] - initialPos[j * 3 + 1];
-        const dz = initialPos[i * 3 + 2] - initialPos[j * 3 + 2];
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < 2.0 && connections < 3) {
-          indices.push(i, j);
-          connections++;
-        }
-      }
-    }
-    return new Uint16Array(indices);
-  }, [initialPos]);
-
-  // Line positions array (updated in runtime frame loop)
-  const linePositions = useMemo(() => {
-    return new Float32Array(lineIndices.length * 3);
-  }, [lineIndices]);
-
-  useFrame((state, delta) => {
-    const pAttr = pointsRef.current?.geometry.attributes.position;
-    const lAttr = linesRef.current?.geometry.attributes.position;
-
-    if (!pAttr || !lAttr) return;
-
-    // Normalizing mouse to fit visible webgl scale coordinates
-    const mouseX = state.mouse.x * 4.5;
-    const mouseY = state.mouse.y * 3.5;
-
-    // 1. Move points & apply mouse repulsion field
-    for (let i = 0; i < count; i++) {
-      let x = pAttr.getX(i);
-      let y = pAttr.getY(i);
-      let z = pAttr.getZ(i);
-
-      let vx = velocities[i * 3];
-      let vy = velocities[i * 3 + 1];
-      let vz = velocities[i * 3 + 2];
-
-      x += vx * delta;
-      y += vy * delta;
-      z += vz * delta;
-
-      // Soft borders rebound
-      if (Math.abs(x) > 4.5) velocities[i * 3] = -vx;
-      if (Math.abs(y) > 3.5) velocities[i * 3 + 1] = -vy;
-      if (Math.abs(z) > 2.5) velocities[i * 3 + 2] = -vz;
-
-      // Magnetic mouse hover push
-      const dx = x - mouseX;
-      const dy = y - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 1.8) {
-        const force = (1.8 - dist) * 0.06;
-        x += (dx / dist) * force;
-        y += (dy / dist) * force;
-      }
-
-      pAttr.setXYZ(i, x, y, z);
-    }
-    pAttr.needsUpdate = true;
-
-    // 2. Synchronize connected line vertices positions
-    for (let k = 0; k < lineIndices.length / 2; k++) {
-      const idxA = lineIndices[k * 2];
-      const idxB = lineIndices[k * 2 + 1];
-
-      const ax = pAttr.getX(idxA);
-      const ay = pAttr.getY(idxA);
-      const az = pAttr.getZ(idxA);
-
-      const bx = pAttr.getX(idxB);
-      const by = pAttr.getY(idxB);
-      const bz = pAttr.getZ(idxB);
-
-      lAttr.setXYZ(k * 2, ax, ay, az);
-      lAttr.setXYZ(k * 2 + 1, bx, by, bz);
-    }
-    lAttr.needsUpdate = true;
-  });
-
-  return (
-    <>
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[positions, 3]}
-            count={positions.length / 3}
-            array={positions}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          color="#a78bfa"
-          size={0.06}
-          sizeAttenuation={true}
-          transparent
-          opacity={0.5}
-          blending={THREE.AdditiveBlending}
-        />
-      </points>
-
-      <lineSegments ref={linesRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[linePositions, 3]}
-            count={linePositions.length / 3}
-            array={linePositions}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial
-          color="#312e81"
-          transparent
-          opacity={0.25}
-          blending={THREE.AdditiveBlending}
-        />
-      </lineSegments>
-    </>
-  );
-}
+// Soft pastel palette — professional light theme
+const ORBS: {
+  xRatio: number; yRatio: number;
+  rRatio: number;
+  rgb: [number, number, number];
+  vx: number; vy: number;
+  alpha: number;
+}[] = [
+  { xRatio: 0.12, yRatio: 0.20, rRatio: 0.40, rgb: [196, 175, 252], vx:  0.22, vy:  0.16, alpha: 0.90 }, // soft lavender
+  { xRatio: 0.80, yRatio: 0.72, rRatio: 0.42, rgb: [125, 222, 242], vx: -0.18, vy:  0.14, alpha: 0.85 }, // soft cyan
+  { xRatio: 0.50, yRatio: 0.48, rRatio: 0.30, rgb: [134, 239, 196], vx:  0.16, vy: -0.20, alpha: 0.70 }, // soft mint
+  { xRatio: 0.18, yRatio: 0.76, rRatio: 0.28, rgb: [252, 192, 202], vx: -0.14, vy: -0.16, alpha: 0.80 }, // soft rose
+  { xRatio: 0.88, yRatio: 0.16, rRatio: 0.36, rgb: [186, 198, 254], vx:  0.12, vy:  0.20, alpha: 0.75 }, // soft indigo
+  { xRatio: 0.44, yRatio: 0.86, rRatio: 0.26, rgb: [153, 246, 228], vx:  0.20, vy: -0.14, alpha: 0.65 }, // soft teal
+];
 
 export default function ThreeBackground() {
-  const [isMobile, setIsMobile] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.matchMedia("(max-width: 768px)").matches);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    resize();
+
+    // Initialise live orb state from ratios
+    const orbs = ORBS.map((o) => ({
+      x:     canvas.width  * o.xRatio,
+      y:     canvas.height * o.yRatio,
+      r:     Math.min(canvas.width, canvas.height) * o.rRatio,
+      rgb:   o.rgb,
+      vx:    o.vx,
+      vy:    o.vy,
+      alpha: o.alpha,
+    }));
+
+    function frame() {
+      const W = canvas!.width;
+      const H = canvas!.height;
+
+      // Clear with the base background colour
+      ctx!.fillStyle = "#f8fafc";
+      ctx!.fillRect(0, 0, W, H);
+
+      for (const orb of orbs) {
+        ctx!.globalAlpha = orb.alpha;
+        ctx!.fillStyle = `rgb(${orb.rgb.join(",")})`;
+        ctx!.beginPath();
+        ctx!.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
+        ctx!.fill();
+
+        // Drift
+        orb.x += orb.vx;
+        orb.y += orb.vy;
+
+        // Soft boundary bounce
+        if (orb.x < -orb.r * 0.3 || orb.x > W + orb.r * 0.3) orb.vx *= -1;
+        if (orb.y < -orb.r * 0.3 || orb.y > H + orb.r * 0.3) orb.vy *= -1;
+      }
+
+      ctx!.globalAlpha = 1;
+      animId = requestAnimationFrame(frame);
+    }
+
+    frame();
+
+    window.addEventListener("resize", resize);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
   return (
+    /* The parent clips any blur-bleed at the viewport edges */
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
+        inset: 0,
         zIndex: -1,
+        overflow: "hidden",
+        background: "#f8fafc",
         pointerEvents: "none",
-        background: "radial-gradient(circle at 50% 50%, #07060f 0%, #010102 100%)"
       }}
     >
-      {!isMobile && (
-        <Canvas camera={{ position: [0, 0, 4.2], fov: 60 }}>
-          <ConstellationMesh />
-        </Canvas>
-      )}
+      {/* Canvas renders hard circles; CSS blur blends them into a living mesh gradient */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          filter: "blur(96px)",
+          opacity: 0.88,
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 }

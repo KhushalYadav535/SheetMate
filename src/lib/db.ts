@@ -5,6 +5,10 @@ import pg from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
+if (globalForPrisma.prisma && !('deletionFeedback' in globalForPrisma.prisma)) {
+  delete (globalForPrisma as any).prisma;
+}
+
 export const prisma = (() => {
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;

@@ -90,12 +90,116 @@ async function queryGroq(prompt: string, systemPrompt: string, apiKey: string) {
   throw lastError || new Error("All Groq models failed");
 }
 
-export async function queryOpenRouter(prompt: string, systemPrompt: string) {
+export async function queryOpenRouter(
+  prompt: string,
+  systemPrompt: string,
+  imageBuffer?: Buffer,
+  mimeType?: string,
+  customModel?: string
+) {
   let lastError = null;
 
+  // Set up model pipelines based on customModel mapping
+  let selectedVisionModels = [
+    "google/gemini-2.5-flash",
+    "meta-llama/llama-3.2-11b-vision-instruct"
+  ];
+
+  let selectedTextModels = MODELS;
+
+  if (customModel) {
+    if (customModel === "haiku") {
+      selectedVisionModels = ["anthropic/claude-3-haiku", ...selectedVisionModels];
+      selectedTextModels = ["anthropic/claude-3-haiku:free", "anthropic/claude-3-haiku", ...MODELS];
+    } else if (customModel === "sonnet") {
+      selectedVisionModels = ["anthropic/claude-3.5-sonnet", ...selectedVisionModels];
+      selectedTextModels = ["anthropic/claude-3.5-sonnet", "anthropic/claude-3.5-sonnet:beta", ...MODELS];
+    } else {
+      selectedVisionModels = [customModel, ...selectedVisionModels];
+      selectedTextModels = [customModel, ...MODELS];
+    }
+  }
+
+  // If we have an image, skip Groq (it has no active vision models in the free/configured key list)
+  // and query OpenRouter's vision models directly.
+  if (imageBuffer && mimeType) {
+    const apiKeys = [
+      process.env.OPENROUTER_API_KEY,
+      process.env.BACKUP_OPENROUTER_API_KEY
+    ].filter(Boolean) as string[];
+
+    if (apiKeys.length > 0) {
+      for (const model of selectedVisionModels) {
+        for (let kIdx = 0; kIdx < apiKeys.length; kIdx++) {
+          const apiKey = apiKeys[kIdx];
+          const keyLabel = kIdx === 0 ? "Primary" : "Backup";
+          try {
+            console.log(`[OpenRouter Vision] Querying model: ${model} using ${keyLabel} key...`);
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "HTTP-Referer": "https://practicemitra.in",
+                "X-Title": "PracticeMitra",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                model: model,
+                response_format: { type: "json_object" },
+                max_tokens: 2048, // Limit output tokens to prevent high billing calculation block
+                messages: [
+                  {
+                    role: "system",
+                    content: systemPrompt
+                  },
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: prompt
+                      },
+                      {
+                        type: "image_url",
+                        image_url: {
+                          url: `data:${mimeType};base64,${imageBuffer.toString("base64")}`
+                        }
+                      }
+                    ]
+                  }
+                ],
+                temperature: 0.7
+              })
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Vision model ${model} responded with code ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+
+            if (!content) {
+              throw new Error(`Vision model ${model} returned empty response content.`);
+            }
+
+            return cleanAndParseJSON(content);
+
+          } catch (error) {
+            console.warn(`[OpenRouter Vision Failed] Model ${model} with ${keyLabel} key:`, error);
+            lastError = error;
+          }
+        }
+      }
+    }
+    throw new Error(`All OpenRouter vision models failed. Last error: ${(lastError as Error)?.message || "Unknown error"}`);
+  }
+
   // 1. Primary: Direct query to Groq API (extremely fast and highly available)
+  // Skip Groq direct query if a custom model is requested to enforce routing to customModel
   const groqApiKey = process.env.GROQ_API_KEY;
-  if (groqApiKey) {
+  if (groqApiKey && !customModel) {
     try {
       console.log(`[Groq] Querying primary pipeline...`);
       return await queryGroq(prompt, systemPrompt, groqApiKey);
@@ -103,6 +207,8 @@ export async function queryOpenRouter(prompt: string, systemPrompt: string) {
       console.warn("[Groq Failed] Direct query failed, falling back to OpenRouter:", groqError);
       lastError = groqError;
     }
+  } else if (customModel) {
+    console.log(`[Groq Skip] Custom model ${customModel} requested, skipping Groq pipeline`);
   } else {
     console.warn("[Groq Config] Groq API key is not configured in .env, skipping primary pipeline");
   }
@@ -114,7 +220,7 @@ export async function queryOpenRouter(prompt: string, systemPrompt: string) {
   ].filter(Boolean) as string[];
 
   if (apiKeys.length > 0) {
-    for (const model of MODELS) {
+    for (const model of selectedTextModels) {
       for (let kIdx = 0; kIdx < apiKeys.length; kIdx++) {
         const apiKey = apiKeys[kIdx];
         const keyLabel = kIdx === 0 ? "Primary" : "Backup";
@@ -124,8 +230,8 @@ export async function queryOpenRouter(prompt: string, systemPrompt: string) {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${apiKey}`,
-              "HTTP-Referer": "https://sheetmate.in",
-              "X-Title": "SheetMate",
+              "HTTP-Referer": "https://practicemitra.in",
+              "X-Title": "PracticeMitra",
               "Content-Type": "application/json"
             },
             body: JSON.stringify({

@@ -23,15 +23,22 @@ model StudentProfile {
   name       String
   grade      String               // "LKG", "UKG", "Class 1" through "Class 8"
   board      String               // CBSE, ICSE, UP_BOARD, JAC, MSBSHSE, WBBSE, MPBSE, RBSE, BSEB
+  profileType String               @default("student") // "parent" or "student"
   parentPin   String               @default("0000")
   parentEmail String?
   parentPhone String?
   studentPhone String?
   username    String?              @unique
   password    String               @default("")
+  securityQuestion String?
+  securityAnswer   String?
   worksheets  GeneratedWorksheet[]
   weaknesses  WeaknessLog[]
   createdAt   DateTime             @default(now())
+  deletedAt   DateTime?
+  parentalConsentGiven Boolean  @default(false)
+  parentalConsentIp    String?
+  parentalConsentDate  DateTime?
 }
 
 model GeneratedWorksheet {
@@ -67,3 +74,63 @@ model WorksheetCache {
   contentJson String
   createdAt   DateTime @default(now())
 }
+
+model DeletionFeedback {
+  id             String   @id @default(uuid())
+  reason         String
+  customFeedback String?
+  studentName    String?
+  username       String?
+  grade          String?
+  board          String?
+  createdAt      DateTime @default(now())
+}
+
+model SystemConfig {
+  id         String   @id @default("active_config")
+  version    String   @default("1.0.0")
+  configJson String   // Stores config JSON (Section 4 config schema)
+  updatedAt  DateTime @updatedAt
+}
+
+model SystemConfigHistory {
+  id          String   @id @default(uuid())
+  version     String
+  changedBy   String   // User identification or "SYSTEM"
+  configJson  String   // JSON string of the configuration at this timestamp
+  diffJson    String   // Difference/Changelog JSON string (Section 12 diff)
+  createdAt   DateTime @default(now())
+}
+
+model ParentSubscription {
+  id               String    @id @default(uuid())
+  contact          String    @unique // parent's phone or email
+  tier             String    @default("FREE") // "FREE", "PLUS", "FAMILY_PRO"
+  status           String    @default("ACTIVE")
+  autoRenew        Boolean   @default(true)
+  endsAt           DateTime?
+  billingPriceINR  Int       @default(0)      // For price grandfathering (Section 12)
+  stripeCustomerId String?
+  subscriptionId   String?
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model CreditPurchase {
+  id               String   @id @default(uuid())
+  parentContact    String
+  creditsGranted   Int
+  creditsRemaining Int
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+}
+
+model EvaluationLog {
+  id               String   @id @default(uuid())
+  worksheetId      String
+  parentContact    String
+  type             String   // "BASIC" or "DETAILED"
+  createdAt        DateTime @default(now())
+}
+

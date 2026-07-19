@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import ThreeBackground from "@/components/ThreeBackground";
 import PreviewPaper from "@/components/PreviewPaper";
 import GeneratorWizard from "@/components/GeneratorWizard";
+import SinglePageGenerator from "@/components/SinglePageGenerator";
 import ChatAgent from "@/components/ChatAgent";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import CustomCursor from "@/components/CustomCursor";
 
 // Register ScrollTrigger safely on the client
 if (typeof window !== "undefined") {
@@ -159,11 +161,11 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
         onMouseLeave={handleMouseLeave}
         style={{
           width: "100%",
-          background: "rgba(18, 18, 30, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "rgba(255, 255, 255, 0.85)",
+          border: "1px solid rgba(0, 0, 0, 0.08)",
           borderRadius: "16px",
           padding: "24px",
-          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(124, 58, 237, 0.08)",
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.06), 0 0 30px rgba(124, 58, 237, 0.04)",
           backdropFilter: "blur(16px)",
           transform: transformStyle,
           transition: isHovered ? "transform 0.05s ease-out" : "transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
@@ -172,20 +174,20 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
         }}
       >
         {/* Mock Title / Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "12px", marginBottom: "14px", transform: "translateZ(20px)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.08)", paddingBottom: "12px", marginBottom: "14px", transform: "translateZ(20px)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", color: "#fff" }}>
               {avatarChar}
             </div>
             <div>
-              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#fff" }}>{displayName}</div>
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{displayName}</div>
               <div style={{ fontSize: "0.6rem", color: "var(--text-secondary)" }}>{displayGradeBoard}</div>
             </div>
           </div>
           {studentProfile ? (
-            <span style={{ fontSize: "0.6rem", background: "rgba(16, 185, 129, 0.12)", color: "#34d399", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>Parent Mode</span>
+            <span style={{ fontSize: "0.6rem", background: "rgba(16, 185, 129, 0.08)", color: "#047857", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.15)" }}>Parent Mode</span>
           ) : (
-            <span style={{ fontSize: "0.6rem", background: "rgba(245, 158, 11, 0.12)", color: "#fbbf24", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>Demo Profile</span>
+            <span style={{ fontSize: "0.6rem", background: "rgba(245, 158, 11, 0.08)", color: "#b45309", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(245, 158, 11, 0.15)" }}>Demo Profile</span>
           )}
         </div>
 
@@ -193,12 +195,12 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
         <div 
           style={{ 
             display: "flex", 
-            background: "rgba(10, 10, 15, 0.5)", 
+            background: "rgba(0, 0, 0, 0.05)", 
             borderRadius: "20px", 
             padding: "3px", 
             marginBottom: "16px", 
             gap: "2px",
-            border: "1px solid rgba(255,255,255,0.04)",
+            border: "1px solid rgba(0, 0, 0, 0.06)",
             transform: "translateZ(25px)"
           }}
           onClick={(e) => e.stopPropagation()}
@@ -233,18 +235,18 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
           <div style={{ transform: "translateZ(30px)" }}>
             {/* Mock KPI Mini Stats Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
-              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "10px", textAlign: "center" }}>
+              <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px", textAlign: "center" }}>
                 <p style={{ fontSize: "0.6rem", color: "var(--text-muted)", margin: 0 }}>Sheets Practice</p>
                 <p style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", margin: "2px 0 0 0" }}>{sheetsPracticeCount}</p>
               </div>
-              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "10px", textAlign: "center" }}>
+              <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px", textAlign: "center" }}>
                 <p style={{ fontSize: "0.6rem", color: "var(--text-muted)", margin: 0 }}>Avg. Accuracy</p>
                 <p style={{ fontSize: "1rem", fontWeight: 800, color: "var(--accent-cyan)", margin: "2px 0 0 0" }}>{avgAccuracyPercent}</p>
               </div>
             </div>
 
             {/* Mock Analytics Mini SVG Curve */}
-            <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
+            <div style={{ background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
               <p style={{ fontSize: "0.65rem", color: "var(--text-secondary)", marginBottom: "8px", fontWeight: 600 }}>Score History Curve</p>
               <svg viewBox="0 0 200 60" style={{ width: "100%", height: "auto", display: "block" }}>
                 <path
@@ -265,12 +267,12 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
             </div>
 
             {/* Mock Learning Path Mastery Progress */}
-            <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "12px" }}>
+            <div style={{ background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", marginBottom: "6px" }}>
                 <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{masteryTopicName}</span>
                 <span style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>{masteryProgressPercent}%</span>
               </div>
-              <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
                 <div style={{ width: `${masteryProgressPercent}%`, height: "100%", background: "linear-gradient(90deg, var(--accent-purple), var(--accent-cyan))", borderRadius: "2px", boxShadow: "0 0 8px var(--accent-cyan-glow)", transition: "width 0.5s ease" }} />
               </div>
             </div>
@@ -280,20 +282,20 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
         {/* Tab 2: Weaknesses Heatmap Content */}
         {activeView === "weaknesses" && (
           <div style={{ transform: "translateZ(30px)", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "12px" }}>
+            <div style={{ background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "12px" }}>
               <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px", fontWeight: 600 }}>Concept Diagnostic Heatmap</p>
               
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {/* Topic 1: Fractions */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", marginBottom: "4px" }}>
-                    <span style={{ color: "#f8fafc", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ width: "6px", height: "6px", background: "#ef4444", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #ef4444" }} className="pulse-dot" />
                       Fractions Math
                     </span>
                     <span style={{ color: "#ef4444", fontWeight: "bold" }}>42% (Critical)</span>
                   </div>
-                  <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
                     <div style={{ width: "42%", height: "100%", background: "#ef4444", borderRadius: "2px" }} />
                   </div>
                   <p style={{ fontSize: "0.55rem", color: "var(--text-muted)", marginTop: "4px" }}>Alert: High error rates in subtraction calculations</p>
@@ -302,13 +304,13 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
                 {/* Topic 2: Decimals */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", marginBottom: "4px" }}>
-                    <span style={{ color: "#f8fafc", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ width: "6px", height: "6px", background: "#fbbf24", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #fbbf24" }} />
                       Decimals & Parts
                     </span>
                     <span style={{ color: "#fbbf24", fontWeight: "bold" }}>68% (Targeted)</span>
                   </div>
-                  <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
                     <div style={{ width: "68%", height: "100%", background: "#fbbf24", borderRadius: "2px" }} />
                   </div>
                   <p style={{ fontSize: "0.55rem", color: "var(--text-muted)", marginTop: "4px" }}>Suggest creating customized practice worksheets</p>
@@ -317,13 +319,13 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
                 {/* Topic 3: Integers */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", marginBottom: "4px" }}>
-                    <span style={{ color: "#f8fafc", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ width: "6px", height: "6px", background: "#10b981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
                       Integers Addition
                     </span>
                     <span style={{ color: "#10b981", fontWeight: "bold" }}>94% (Mastered)</span>
                   </div>
-                  <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
                     <div style={{ width: "94%", height: "100%", background: "#10b981", borderRadius: "2px" }} />
                   </div>
                   <p style={{ fontSize: "0.55rem", color: "var(--text-muted)", marginTop: "4px" }}>Concept locked. Dynamic auto-weight reduced</p>
@@ -336,40 +338,40 @@ function HeroAppMockup({ studentProfile, studentStats }: HeroAppMockupProps) {
         {/* Tab 3: Recent Worksheets Content */}
         {activeView === "progress" && (
           <div style={{ transform: "translateZ(30px)", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "12px" }}>
+            <div style={{ background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "8px", padding: "12px" }}>
               <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px", fontWeight: 600 }}>Worksheets Feed</p>
               
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {/* Worksheet 1 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(0,0,0,0.02)", borderRadius: "6px", border: "1px solid rgba(0,0,0,0.04)" }}>
                   <div>
-                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "#fff" }}>WS-102: Decimals Focus</p>
+                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-primary)" }}>WS-102: Decimals Focus</p>
                     <p style={{ fontSize: "0.55rem", color: "var(--text-muted)" }}>Math • Class 6 • 10 questions</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: "0.65rem", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Graded 9/10</span>
+                    <span style={{ fontSize: "0.65rem", background: "rgba(16, 185, 129, 0.08)", color: "#047857", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Graded 9/10</span>
                   </div>
                 </div>
 
                 {/* Worksheet 2 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(0,0,0,0.02)", borderRadius: "6px", border: "1px solid rgba(0,0,0,0.04)" }}>
                   <div>
-                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "#fff" }}>WS-101: Fractions Match</p>
+                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-primary)" }}>WS-101: Fractions Match</p>
                     <p style={{ fontSize: "0.55rem", color: "var(--text-muted)" }}>Math • Class 6 • 12 questions</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: "0.65rem", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Graded 7/10</span>
+                    <span style={{ fontSize: "0.65rem", background: "rgba(16, 185, 129, 0.08)", color: "#047857", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Graded 7/10</span>
                   </div>
                 </div>
 
                 {/* Worksheet 3 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", background: "rgba(0,0,0,0.02)", borderRadius: "6px", border: "1px solid rgba(0,0,0,0.04)" }}>
                   <div>
-                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "#fff" }}>WS-100: Math Diagnostics</p>
+                    <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-primary)" }}>WS-100: Math Diagnostics</p>
                     <p style={{ fontSize: "0.55rem", color: "var(--text-muted)" }}>Math • Class 6 • 15 questions</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: "0.65rem", background: "rgba(124, 58, 237, 0.15)", color: "#c084fc", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Pending Grader</span>
+                    <span style={{ fontSize: "0.65rem", background: "rgba(124, 58, 237, 0.08)", color: "var(--accent-purple)", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>Pending Grader</span>
                   </div>
                 </div>
               </div>
@@ -385,6 +387,7 @@ export default function HomePage() {
   const router = useRouter();
   const [studentProfileId, setStudentProfileId] = useState<string | null>(null);
   const [studentProfile, setStudentProfile] = useState<any | null>(null);
+  const [guestHistory, setGuestHistory] = useState<any[]>([]);
   const [studentStats, setStudentStats] = useState<{
     sheetsCount: number;
     avgAccuracy: number;
@@ -400,6 +403,11 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [scrollRatio, setScrollRatio] = useState(0);
 
+  const [generationQuotaReached, setGenerationQuotaReached] = useState(false);
+  const [evaluationQuotaReached, setEvaluationQuotaReached] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<any | null>(null);
+  const [userTier, setUserTier] = useState<string>("FREE");
+
   // Dynamic stats state (defaulting to premium placeholders)
   const [rawStats, setRawStats] = useState({
     worksheets: 12400,
@@ -408,7 +416,7 @@ export default function HomePage() {
     avgAccuracy: 88
   });
 
-  // Fetch real statistics from database on load
+  // Fetch real statistics & pricing config from database on load
   useEffect(() => {
     fetch("/api/stats")
       .then(res => {
@@ -426,6 +434,18 @@ export default function HomePage() {
         }
       })
       .catch(err => console.error("Error loading homepage stats:", err));
+
+    fetch("/api/config")
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Config request failed");
+      })
+      .then(data => {
+        if (data) {
+          setSystemConfig(data);
+        }
+      })
+      .catch(err => console.error("Error loading config on homepage:", err));
   }, []);
 
   // Animated counter values bound to rawStats
@@ -451,7 +471,15 @@ export default function HomePage() {
 
   // Sync profile ID on load
   useEffect(() => {
-    const savedId = localStorage.getItem("sheetmate_profile_id");
+    const history = sessionStorage.getItem("practicemitra_guest_history");
+    if (history) {
+      try {
+        setGuestHistory(JSON.parse(history));
+      } catch (e) {
+        console.error("Error parsing guest history:", e);
+      }
+    }
+    const savedId = localStorage.getItem("practicemitra_profile_id");
     if (savedId) {
       setStudentProfileId(savedId);
       fetch(`/api/student/dashboard?id=${savedId}`)
@@ -461,6 +489,9 @@ export default function HomePage() {
         .then(data => {
           if (data && data.profile) {
             setStudentProfile(data.profile);
+            setGenerationQuotaReached(!!data.generationQuotaReached);
+            setEvaluationQuotaReached(!!data.evaluationQuotaReached);
+            setUserTier(data.tier || "FREE");
 
             // Calculate stats for the hero mockup
             const sheetsCount = data.worksheets ? data.worksheets.length : 0;
@@ -503,10 +534,10 @@ export default function HomePage() {
 
   // Check for logout flag in localStorage on load
   useEffect(() => {
-    const showToast = localStorage.getItem("sheetmate_show_logout_toast");
+    const showToast = localStorage.getItem("practicemitra_show_logout_toast");
     if (showToast === "true") {
       setShowLogoutToast(true);
-      localStorage.removeItem("sheetmate_show_logout_toast");
+      localStorage.removeItem("practicemitra_show_logout_toast");
       // Auto-hide after 6 seconds
       const timer = setTimeout(() => {
         setShowLogoutToast(false);
@@ -565,7 +596,65 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [studentProfileId]);
 
-  // GSAP-powered ScrollTrigger reveals for sections and elements
+  // ── GSAP page-load entrance timeline ──
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    if (isMobile) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        defaults: { ease: "expo.out" },
+        delay: 0.1,
+      });
+
+      // 1. Navbar slides down from above
+      tl.fromTo(
+        ".tubelight-nav",
+        { y: -72, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85 }
+      )
+        // 2. Section badge fades up
+        .fromTo(
+          ".hero-practice-badge",
+          { y: 24, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          "-=0.45"
+        )
+        // 3. Main headline slides up with subtle scale
+        .fromTo(
+          ".hero-practice-title",
+          { y: 36, opacity: 0, scale: 0.96 },
+          { y: 0, opacity: 1, scale: 1, duration: 0.75 },
+          "-=0.4"
+        )
+        // 4. Description fades up
+        .fromTo(
+          ".hero-practice-desc",
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          "-=0.45"
+        )
+        // 5. Wizard card rises from below
+        .fromTo(
+          ".hero-practice-wizard",
+          { y: 52, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.9 },
+          "-=0.4"
+        )
+        // 6. Preview slides in from the right
+        .fromTo(
+          ".hero-practice-preview",
+          { x: 40, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.85 },
+          "-=0.65"
+        );
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  // GSAP-powered ScrollTrigger reveals — direction-aware per section
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -573,84 +662,132 @@ export default function HomePage() {
     const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
     if (isMobile) {
-      // Eagerly reveal all elements on mobile to prevent scroll triggers delay
-      gsap.set(elements, { opacity: 1, y: 0, scale: 1, transition: "none" });
+      gsap.set(elements, { opacity: 1, y: 0, x: 0, scale: 1, transition: "none" });
       return;
     }
-    
-    // Clear CSS transition so GSAP can take over smoothly
+
+    // Clear CSS transitions so GSAP takes over cleanly
     gsap.set(elements, { transition: "none" });
 
     const triggers: any[] = [];
-    const sections = ["practice-section", "features-section", "perks-section", "faq-section"];
-    
-    sections.forEach((secId) => {
-      const section = document.getElementById(secId);
-      if (!section) return;
 
-      const secElements = section.querySelectorAll(".scroll-reveal");
-      if (secElements.length === 0) return;
+    // Features bento grid: alternating left / right entrance per card
+    const featSection = document.getElementById("features-section");
+    if (featSection) {
+      const bentoCards = featSection.querySelectorAll(".bento-card.scroll-reveal");
+      if (bentoCards.length > 0) {
+        const st = ScrollTrigger.create({
+          trigger: featSection,
+          start: "top 80%",
+          once: true,
+          onEnter: () => {
+            bentoCards.forEach((card, i) => {
+              const fromX = i % 2 === 0 ? -28 : 28;
+              gsap.fromTo(
+                card,
+                { opacity: 0, x: fromX, y: 18, scale: 0.97 },
+                { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.7, delay: i * 0.1, ease: "power3.out", overwrite: "auto" }
+              );
+            });
+          }
+        });
+        triggers.push(st);
+      }
+    }
 
+    // FAQ section: reveal title/subtitle first, then cards stagger up
+    const faqSection = document.getElementById("faq-section");
+    if (faqSection) {
+      const faqHeader = faqSection.querySelectorAll(".scroll-reveal:not(.faq-card)");
+      const faqCards = faqSection.querySelectorAll(".faq-card.scroll-reveal");
+      if (faqHeader.length > 0 || faqCards.length > 0) {
+        const st = ScrollTrigger.create({
+          trigger: faqSection,
+          start: "top 82%",
+          once: true,
+          onEnter: () => {
+            // Title + subtitle first
+            if (faqHeader.length > 0) {
+              gsap.fromTo(
+                faqHeader,
+                { opacity: 0, y: 22 },
+                { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power3.out", overwrite: "auto" }
+              );
+            }
+            // FAQ cards with slight offset
+            if (faqCards.length > 0) {
+              gsap.fromTo(
+                faqCards,
+                { opacity: 0, y: 26 },
+                { opacity: 1, y: 0, duration: 0.65, stagger: 0.09, ease: "power3.out", delay: 0.25, overwrite: "auto" }
+              );
+            }
+          }
+        });
+        triggers.push(st);
+      }
+    }
+
+    // Perks section: standard staggered reveal
+    const perksSection = document.getElementById("perks-section");
+    if (perksSection) {
+      const perksEls = perksSection.querySelectorAll(".scroll-reveal");
+      if (perksEls.length > 0) {
+        const st = ScrollTrigger.create({
+          trigger: perksSection,
+          start: "top 82%",
+          once: true,
+          onEnter: () => {
+            gsap.fromTo(
+              perksEls,
+              { opacity: 0, y: 28, scale: 0.98 },
+              { opacity: 1, y: 0, scale: 1, duration: 0.75, stagger: 0.12, ease: "power3.out", overwrite: "auto" }
+            );
+          }
+        });
+        triggers.push(st);
+      }
+    }
+
+    // Stat counter cards: pop up with back ease (springy feel)
+    const statCards = document.querySelectorAll(".stat-counter-card.scroll-reveal");
+    if (statCards.length > 0) {
       const st = ScrollTrigger.create({
-        trigger: section,
-        start: "top 82%",
+        trigger: statCards[0] as Element,
+        start: "top 88%",
+        once: true,
         onEnter: () => {
           gsap.fromTo(
-            secElements,
-            { opacity: 0, y: 35, scale: 0.98 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: 0.8,
-              stagger: 0.12,
-              ease: "power3.out",
-              overwrite: "auto"
-            }
+            statCards,
+            { opacity: 0, y: 22, scale: 0.93 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.58, stagger: 0.1, ease: "back.out(1.5)", overwrite: "auto" }
           );
-        },
-        onLeaveBack: () => {
-          gsap.set(secElements, { opacity: 0, y: 35, scale: 0.98 });
+        }
+      });
+      triggers.push(st);
+    }
+
+    // Fallback: any remaining scroll-reveal elements not handled above
+    elements.forEach((el) => {
+      const inHandled = ["features-section", "faq-section", "perks-section"].some(
+        (id) => document.getElementById(id)?.contains(el)
+      );
+      const isStatCard = el.classList.contains("stat-counter-card");
+      if (inHandled || isStatCard) return;
+
+      const st = ScrollTrigger.create({
+        trigger: el,
+        start: "top 86%",
+        once: true,
+        onEnter: () => {
+          gsap.fromTo(el, { opacity: 0, y: 26 }, {
+            opacity: 1, y: 0, duration: 0.7, ease: "power2.out", overwrite: "auto"
+          });
         }
       });
       triggers.push(st);
     });
 
-    // Handle any loose scroll-reveal elements outside these sections
-    elements.forEach((el) => {
-      let parentHasSection = false;
-      sections.forEach((secId) => {
-        if (document.getElementById(secId)?.contains(el)) {
-          parentHasSection = true;
-        }
-      });
-
-      if (!parentHasSection) {
-        const st = ScrollTrigger.create({
-          trigger: el,
-          start: "top 85%",
-          onEnter: () => {
-            gsap.fromTo(
-              el,
-              { opacity: 0, y: 30 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.75,
-                ease: "power2.out",
-                overwrite: "auto"
-              }
-            );
-          },
-          onLeaveBack: () => {
-            gsap.set(el, { opacity: 0, y: 30 });
-          }
-        });
-        triggers.push(st);
-      }
-    });
-
-    // Refresh ScrollTrigger positions
     ScrollTrigger.refresh();
 
     return () => {
@@ -776,7 +913,7 @@ export default function HomePage() {
   }, [studentProfileId]);
 
   const handleLogOut = () => {
-    localStorage.removeItem("sheetmate_profile_id");
+    localStorage.removeItem("practicemitra_profile_id");
     setStudentProfileId(null);
     setStudentProfile(null);
     setStudentStats(null);
@@ -801,6 +938,24 @@ export default function HomePage() {
   };
 
   const handleGenerationSuccess = (worksheetId: string) => {
+    if (!studentProfileId) {
+      const historyStr = sessionStorage.getItem("practicemitra_guest_history");
+      const history = historyStr ? JSON.parse(historyStr) : [];
+      const newRecord = {
+        id: worksheetId,
+        subject: selections.subject,
+        topic: selections.topicNames.join(", "),
+        difficulty: selections.difficulty,
+        grade: selections.grade,
+        createdAt: new Date().toISOString(),
+        score: null
+      };
+      if (!history.some((item: any) => item.id === worksheetId)) {
+        const updated = [newRecord, ...history].slice(0, 5); // limit to last 5
+        sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(updated));
+        setGuestHistory(updated);
+      }
+    }
     // Route to the print-preview & grader workspace for this worksheet
     router.push(`/worksheets/${worksheetId}`);
   };
@@ -815,6 +970,8 @@ export default function HomePage() {
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }} className="responsive-container">
+      {/* Premium light-theme cursor */}
+      <CustomCursor />
       {/* 3D WebGL Floating Background */}
       <ThreeBackground />
       {/* Premium Fading Grid Overlay */}
@@ -870,20 +1027,12 @@ export default function HomePage() {
         <div className="tubelight-brand" onClick={() => router.push("/")}>
           <div className="tubelight-brand-logo" />
           <span className="tubelight-brand-text">
-            Sheet<span style={{ color: "var(--accent-purple)" }}>Mate</span>
+            Practice<span style={{ color: "var(--accent-purple)" }}>Mitra</span>
           </span>
         </div>
         
         <div className="tubelight-links-group">
-          <span
-            className={`tubelight-link ${activeTab === "home" ? "active" : ""}`}
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              setActiveTab("home");
-            }}
-          >
-            Home
-          </span>
+
           <span
             className={`tubelight-link ${activeTab === "practice" ? "active" : ""}`}
             onClick={() => {
@@ -968,7 +1117,7 @@ export default function HomePage() {
                 }}>
                   {studentProfile?.name ? studentProfile.name[0].toUpperCase() : "S"}
                 </div>
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#fff" }} className="no-print">
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }} className="no-print">
                   {studentProfile?.name || "Student"}
                 </span>
                 <span style={{ width: "6px", height: "6px", background: "#10b981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #10b981" }} className="pulse-dot" />
@@ -976,7 +1125,7 @@ export default function HomePage() {
               <button
                 type="button"
                 className="btn-secondary"
-                style={{ padding: "6px 14px", fontSize: "0.78rem", borderColor: "rgba(239, 68, 68, 0.3)", color: "#fca5a5", borderRadius: "20px" }}
+                style={{ padding: "6px 14px", fontSize: "0.78rem", borderColor: "rgba(239, 68, 68, 0.3)", color: "#dc2626", borderRadius: "20px" }}
                 onClick={handleLogOut}
               >
                 Log Out
@@ -1018,16 +1167,7 @@ export default function HomePage() {
 
         {/* Mobile Drawer */}
         <div className="tubelight-mobile-drawer">
-          <span
-            className={`tubelight-mobile-link ${activeTab === "home" ? "active" : ""}`}
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              setActiveTab("home");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Home
-          </span>
+
           <span
             className={`tubelight-mobile-link ${activeTab === "practice" ? "active" : ""}`}
             onClick={() => {
@@ -1104,7 +1244,7 @@ export default function HomePage() {
                     padding: "8px 16px",
                     borderRadius: "20px",
                     cursor: "pointer",
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     fontWeight: 700
                   }}
                 >
@@ -1128,7 +1268,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   className="btn-secondary"
-                  style={{ width: "100%", padding: "10px", fontSize: "0.85rem", borderColor: "rgba(239, 68, 68, 0.3)", color: "#fca5a5", borderRadius: "20px" }}
+                  style={{ width: "100%", padding: "10px", fontSize: "0.85rem", borderColor: "rgba(239, 68, 68, 0.3)", color: "#dc2626", borderRadius: "20px" }}
                   onClick={() => {
                     handleLogOut();
                     setMobileMenuOpen(false);
@@ -1167,183 +1307,18 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* 1. Hero Section (Home fold) */}
-      <section
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          minHeight: "75vh",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "50px",
-          alignItems: "center",
-          paddingBottom: "40px",
-          paddingTop: "40px"
-        }}
-      >
-        {/* Hero Left Column: Copy & Call to Action */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <div>
-            {studentProfile ? (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(16, 185, 129, 0.12)", padding: "6px 12px", borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
-                <span style={{ width: "8px", height: "8px", background: "#10b981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 8px #10b981" }} className="pulse-dot" />
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Active Profile: {studentProfile.name} ({studentProfile.grade})
-                </span>
-              </div>
-            ) : (
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  color: "var(--accent-cyan)",
-                  background: "rgba(6, 182, 212, 0.12)",
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  border: "1px solid rgba(6, 182, 212, 0.2)"
-                }}
-              >
-                Guest Workspace (Limited Mode)
-              </span>
-            )}
-            <h1
-              style={{
-                fontSize: "clamp(2.6rem, 5.8vw, 3.8rem)",
-                lineHeight: 1.05,
-                marginTop: "16px",
-                marginBottom: "16px",
-                color: "#fff"
-              }}
-              className="display-typography"
-            >
-              <SplitTextReveal text="Tailored worksheets. Aligned to school syllabus." delay={0.15} />
-            </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem", maxWidth: "520px", lineHeight: 1.6 }}>
-              {studentProfile
-                ? "Your adaptive learning workspace is ready. Practice sheets are custom-weighted to target your conceptual weaknesses."
-                : "Create standard curriculum-aligned printable worksheets (Class LKG - Class 8) in seconds. Lock parent analytics & grade sheets via OTP."}
-            </p>
-          </div>
- 
-          <div>
-            <div className="border-beam-wrapper magnetic-btn" style={{ borderRadius: "8px" }}>
-              <button
-                type="button"
-                className="border-beam-inner"
-                style={{
-                  padding: "15px 35px",
-                  fontSize: "1.05rem",
-                  display: "inline-flex",
-                  gap: "10px",
-                  alignItems: "center",
-                  background: "rgba(10, 10, 15, 0.95)",
-                  color: "#fff",
-                  border: "none",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  cursor: "pointer"
-                }}
-                onClick={() => {
-                  const el = document.getElementById("practice-section");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                  setActiveTab("practice");
-                }}
-              >
-                <span>Create Practice Sheet</span>
-                <span>⚡</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Right Column: 3D App UI Mockup */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }} className="hide-mobile">
-          <HeroAppMockup studentProfile={studentProfile} studentStats={studentStats} />
-        </div>
-      </section>
-
-      {/* 21st.dev Infinite Scrolling Board & Syllabus Trust Marquee */}
-      <section style={{ width: "100%", overflow: "hidden", margin: "20px 0 60px 0" }}>
-        <div className="marquee-container">
-          <div className="marquee-content">
-            {[
-              "NCERT Curriculum Aligned",
-              "CBSE Syllabus Integrated",
-              "ICSE & SCERT Coverage",
-              "Class LKG - Class 8 Support",
-              "Adaptive AI Question Bank",
-              "Interactive Parent Grader Logs",
-              "Mathematics Practice Sheets",
-              "Science Lab Core Concepts",
-              "EVS & Social Science Blocks",
-              "Hindi Rimjhim & Vasant Chapters",
-              "English Grammatical Progress"
-            ].map((text, idx) => (
-              <span key={idx} style={{ 
-                fontSize: "0.8rem", 
-                fontWeight: 700, 
-                color: "var(--text-secondary)", 
-                display: "inline-flex", 
-                alignItems: "center", 
-                gap: "10px",
-                background: "rgba(255, 255, 255, 0.02)",
-                padding: "6px 14px",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.04)"
-              }}>
-                <span style={{ width: "6px", height: "6px", background: "var(--accent-purple)", borderRadius: "50%" }}></span>
-                {text}
-              </span>
-            ))}
-          </div>
-          <div className="marquee-content">
-            {[
-              "NCERT Curriculum Aligned",
-              "CBSE Syllabus Integrated",
-              "ICSE & SCERT Coverage",
-              "Class LKG - Class 8 Support",
-              "Adaptive AI Question Bank",
-              "Interactive Parent Grader Logs",
-              "Mathematics Practice Sheets",
-              "Science Lab Core Concepts",
-              "EVS & Social Science Blocks",
-              "Hindi Rimjhim & Vasant Chapters",
-              "English Grammatical Progress"
-            ].map((text, idx) => (
-              <span key={`dup-${idx}`} style={{ 
-                fontSize: "0.8rem", 
-                fontWeight: 700, 
-                color: "var(--text-secondary)", 
-                display: "inline-flex", 
-                alignItems: "center", 
-                gap: "10px",
-                background: "rgba(255, 255, 255, 0.02)",
-                padding: "6px 14px",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.04)"
-              }}>
-                <span style={{ width: "6px", height: "6px", background: "var(--accent-purple)", borderRadius: "50%" }}></span>
-                {text}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Worksheet Generator Section */}
+      {/* Worksheet Generator Section */}
       <section
         id="practice-section"
         style={{
           maxWidth: "1200px",
-          margin: "40px auto 80px auto",
-          padding: "60px 20px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.05)"
+          margin: "80px auto 80px auto",
+          padding: "20px 20px"
         }}
       >
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <span
+            className="hero-practice-badge"
             style={{
               fontSize: "0.75rem",
               fontWeight: 700,
@@ -1353,59 +1328,148 @@ export default function HomePage() {
               borderRadius: "20px",
               textTransform: "uppercase",
               letterSpacing: "0.05em",
-              border: "1px solid rgba(6, 182, 212, 0.2)"
+              border: "1px solid rgba(6, 182, 212, 0.2)",
+              display: "inline-block"
             }}
           >
             Practice Workspace
           </span>
-          <h2 className="gradient-text" style={{ fontSize: "2.1rem", marginTop: "12px", marginBottom: "12px" }}>
+          <h2 className="gradient-text hero-practice-title" style={{ fontSize: "2.1rem", marginTop: "12px", marginBottom: "12px" }}>
             Generate Customized Worksheet
           </h2>
-          <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
-            Select your syllabus details below. SheetMate AI will construct a targeted practice sheet instantly.
+          <p className="hero-practice-desc" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
+            Select your syllabus details below. PracticeMitra AI will construct a targeted practice sheet instantly.
           </p>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "50px",
-            alignItems: "flex-start"
-          }}
-        >
-          {/* Left Column: Generator Wizard */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <GeneratorWizard
-              studentProfileId={studentProfileId}
-              onSelectionChange={handleSelectionChange}
-              onGenerationSuccess={handleGenerationSuccess}
-            />
-          </div>
-
-          {/* Right Column: Live interactive 3D paper mockup */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }} className="hide-mobile">
-            <div style={{ marginBottom: "20px", textAlign: "center" }}>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Interactive Live Preview
-              </p>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                Hover to tilt sheet &amp; syncs with wizard selections
-              </p>
-            </div>
-            <div style={{ transform: "scale(var(--scale-mockup, 1))", transformOrigin: "center", transition: "transform 0.3s ease", width: "100%", display: "flex", justifyContent: "center" }} className="mockup-scale-wrapper">
-              <PreviewPaper
-                board={selections.board}
-                grade={selections.grade}
-                subject={selections.subject}
-                topicName={selections.topicNames.length > 1 ? `${selections.topicNames.length} Chapters` : (selections.topicNames[0] || "Select Chapters")}
-                difficulty={selections.difficulty}
-                studentName={studentProfile?.name}
+        {!studentProfileId ? (
+          /* GUEST USER: Single Page Generator with Live Preview side-by-side */
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "50px",
+              alignItems: "flex-start",
+              width: "100%"
+            }}
+          >
+            {/* Left Column: Single Page Generator */}
+            <div className="hero-practice-wizard" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <SinglePageGenerator
+                onSelectionChange={handleSelectionChange}
+                onGenerationSuccess={handleGenerationSuccess}
               />
             </div>
+
+            {/* Right Column: Live interactive 3D paper mockup */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }} className="hide-mobile hero-practice-preview">
+              <div style={{ marginBottom: "20px", textAlign: "center" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Interactive Live Preview
+                </p>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  Hover to tilt sheet &amp; syncs with selections
+                </p>
+              </div>
+              <div style={{ transform: "scale(var(--scale-mockup, 1))", transformOrigin: "center", transition: "transform 0.3s ease", width: "100%", display: "flex", justifyContent: "center" }} className="mockup-scale-wrapper">
+                <PreviewPaper
+                  board={selections.board}
+                  grade={selections.grade}
+                  subject={selections.subject}
+                  topicName={selections.topicNames.length > 1 ? `${selections.topicNames.length} Chapters` : (selections.topicNames[0] || "Select Chapters")}
+                  difficulty={selections.difficulty}
+                  studentName={studentProfile?.name}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* REGISTERED USER: 3-Step Wizard with Live Preview side-by-side */
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "50px",
+              alignItems: "flex-start",
+              width: "100%"
+            }}
+          >
+            {/* Left Column: Generator Wizard */}
+            <div className="hero-practice-wizard" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <GeneratorWizard
+                studentProfileId={studentProfileId}
+                onSelectionChange={handleSelectionChange}
+                onGenerationSuccess={handleGenerationSuccess}
+              />
+            </div>
+
+            {/* Right Column: Live interactive 3D paper mockup */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }} className="hide-mobile hero-practice-preview">
+              <div style={{ marginBottom: "20px", textAlign: "center" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Interactive Live Preview
+                </p>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  Hover to tilt sheet &amp; syncs with wizard selections
+                </p>
+              </div>
+              <div style={{ transform: "scale(var(--scale-mockup, 1))", transformOrigin: "center", transition: "transform 0.3s ease", width: "100%", display: "flex", justifyContent: "center" }} className="mockup-scale-wrapper">
+                <PreviewPaper
+                  board={selections.board}
+                  grade={selections.grade}
+                  subject={selections.subject}
+                  topicName={selections.topicNames.length > 1 ? `${selections.topicNames.length} Chapters` : (selections.topicNames[0] || "Select Chapters")}
+                  difficulty={selections.difficulty}
+                  studentName={studentProfile?.name}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </section>
+
+      {studentProfileId && (generationQuotaReached || evaluationQuotaReached) && (
+        <section style={{ maxWidth: "1200px", margin: "20px auto 40px auto", padding: "0 20px" }}>
+          {/* Credits Booster Pack Banner */}
+          <div
+            className="spotlight-card scroll-reveal"
+            style={{
+              background: "linear-gradient(90deg, rgba(124, 58, 237, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%)",
+              border: "1px solid rgba(124, 58, 237, 0.15)",
+              borderRadius: "16px",
+              padding: "20px 30px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "20px",
+              cursor: "default"
+            }}
+          >
+            <div style={{ flex: 1, minWidth: "260px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                <strong style={{ fontSize: "1.05rem", color: "var(--text-primary)" }}>PracticeMitra Booster Credit Pack</strong>
+                <span style={{ fontSize: "0.68rem", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", padding: "2px 8px", borderRadius: "10px", fontWeight: 700, textTransform: "uppercase" }}>Limit Hit</span>
+              </div>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.4" }}>
+                {generationQuotaReached && "You have hit your daily/monthly worksheet generation limits. "}
+                {evaluationQuotaReached && "You have hit your monthly detailed review evaluation limits. "}
+                Get a Booster pack of <strong>20 detailed evaluation credits for ₹99</strong> to keep practicing with full solutions and analytics!
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: "12px 24px", borderRadius: "10px", fontWeight: 700, border: "1px solid var(--border-glow)", background: "rgba(255,255,255,0.01)" }}
+                onClick={() => router.push("/dashboard")}
+              >
+                Buy Credit Pack (₹99)
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── ANIMATED STAT COUNTER SECTION ── */}
       <section
@@ -1425,7 +1489,6 @@ export default function HomePage() {
             { value: worksheetsCount, suffix: "+", label: "Worksheets Generated" },
             { value: subjectsCount, suffix: "", label: "NCERT Subjects Covered" },
             { value: gradeLevels, suffix: "", label: "Grade Levels Supported" },
-            { value: accuracyRate, suffix: "%", label: "Avg. Grading Accuracy" },
           ].map((stat, i) => (
             <div key={i} className="stat-counter-card scroll-reveal">
               <div className="stat-counter-value">
@@ -1464,7 +1527,7 @@ export default function HomePage() {
             How it works
           </span>
           <h2 className="gradient-text" style={{ fontSize: "2.1rem", marginTop: "12px", marginBottom: "12px" }}>
-            The SheetMate Personalization Loop
+            The PracticeMitra Personalization Loop
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
             Three core steps that build a tailored conceptual learning path for your child.
@@ -1480,9 +1543,9 @@ export default function HomePage() {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#a78bfa"/>
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px", color: "#fff" }}>Adaptive Learning Engine</h3>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Adaptive Learning Engine</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                SheetMate tracks child practice errors and builds a custom syllabus focus map, targeting weak topics in subsequent sheet generations.
+                PracticeMitra tracks child practice errors and builds a custom syllabus focus map, targeting weak topics in subsequent sheet generations.
               </p>
             </div>
             <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1499,9 +1562,9 @@ export default function HomePage() {
                   <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6v-2zm0 4h8v2H6v-2zm10 0h2v2h-2v-2zm-6-4h8v2h-8v-2z" fill="#22d3ee"/>
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px", color: "#fff" }}>Instant PDF Scanner</h3>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Instant PDF Scanner</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                Upload solved worksheet photos or PDFs. SheetMate extracts written answers and grades the full sheet instantly.
+                Upload solved worksheet photos or PDFs. PracticeMitra extracts written answers and grades the full sheet instantly.
               </p>
             </div>
             <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1518,7 +1581,7 @@ export default function HomePage() {
                   <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#34d399"/>
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px", color: "#fff" }}>Syllabus Aligned</h3>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Syllabus Aligned</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
                 Practice questions align dynamically with CBSE, NCERT, and State Board curriculum guidelines.
               </p>
@@ -1537,7 +1600,7 @@ export default function HomePage() {
                   <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="#a78bfa"/>
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px", color: "#fff" }}>Parent Portal</h3>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Parent Portal</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
                 Track subject-wise grades, accuracy trends, and target conceptual weaknesses with automated alerts.
               </p>
@@ -1550,133 +1613,256 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Guest vs. Profile Perks Comparison Section */}
+      {/* Pricing & Plans Section (in place of Perks Grid) */}
       {!studentProfileId && (
         <section
           id="perks-section"
           style={{
-            maxWidth: "1200px",
-            margin: "40px auto 80px auto",
+            maxWidth: "1250px",
+            margin: "60px auto 100px auto",
             padding: "0 20px",
             position: "relative"
           }}
         >
-          <div className="glass-card" style={{ padding: "40px 30px", border: "1px solid rgba(124, 58, 237, 0.2)" }}>
-            <div style={{ textAlign: "center", marginBottom: "40px" }}>
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  color: "var(--accent-cyan)",
-                  background: "rgba(6, 182, 212, 0.12)",
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  border: "1px solid rgba(6, 182, 212, 0.2)"
-                }}
-              >
-                Why create a profile?
-              </span>
-              <h2 className="gradient-text" style={{ fontSize: "2rem", marginTop: "12px", marginBottom: "12px" }}>
-                Unlock Adaptive Learning & Custom Reports
-              </h2>
-              <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
-                Registered profiles enable personalization that adapts worksheets to your child's specific weaknesses.
-              </p>
-            </div>
-
-            <div
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "48px" }}>
+            <span
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "24px",
-                marginBottom: "40px"
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                color: "var(--accent-purple)",
+                background: "rgba(124, 58, 237, 0.1)",
+                padding: "6px 14px",
+                borderRadius: "20px",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                border: "1px solid rgba(124, 58, 237, 0.2)",
+                display: "inline-block"
               }}
             >
-              {/* Guest Practice Perks */}
-              <div
-                className="scroll-reveal"
-                style={{
-                  background: "rgba(255, 255, 255, 0.01)",
-                  border: "1px solid rgba(255, 255, 255, 0.03)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "30px",
-                  display: "flex",
-                  flexDirection: "column"
-                }}
-              >
-                <h3 style={{ color: "var(--text-secondary)", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: "1.1rem" }}>
-                  <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "var(--text-muted)" }}></span>
-                  Guest Practice (No Login)
-                </h3>
-                
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", flexGrow: 1 }}>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                    <span style={{ color: "#ef4444" }}>✕</span>
-                    <span><strong>Limited Practice:</strong> Max 4 worksheets per 24 hours (tracked by IP address).</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                    <span style={{ color: "#ef4444" }}>✕</span>
-                    <span><strong>Generic Content:</strong> Worksheets do not adapt to mistakes.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                    <span style={{ color: "#ef4444" }}>✕</span>
-                    <span><strong>No Analytics:</strong> Historical grades and weak topics are not logged.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                    <span style={{ color: "#ef4444" }}>✕</span>
-                    <span><strong>Print Only:</strong> Grading must be done offline using the printed key.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                    <span style={{ color: "#ef4444" }}>✕</span>
-                    <span><strong>Manual Configuration:</strong> Re-select grade and board on every generate run.</span>
-                  </li>
-                </ul>
-              </div>
+              Pricing & Plans
+            </span>
+            <h2 className="gradient-text" style={{ fontSize: "2.3rem", marginTop: "16px", marginBottom: "16px", fontFamily: "var(--font-heading)" }}>
+              Simple, Affordable Pricing for Continuous Success
+            </h2>
+            <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto", lineHeight: "1.5" }}>
+              Get started for free or upgrade to a premium plan to unlock unlimited worksheets, parent dashboard logs, and detailed step-by-step review explanations.
+            </p>
+          </div>
 
-              {/* Registered Profile Perks */}
-              <div
-                className="scroll-reveal"
-                style={{
-                  background: "rgba(124, 58, 237, 0.03)",
-                  border: "1px solid rgba(124, 58, 237, 0.15)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "30px",
-                  display: "flex",
-                  flexDirection: "column"
+          {/* Pricing Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "24px",
+              marginBottom: "32px"
+            }}
+          >
+            {/* Card 1: Guest (Free) */}
+            <div
+              className="spotlight-card scroll-reveal"
+              style={{
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "16px",
+                padding: "30px 24px",
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.3s ease",
+                height: "100%",
+                cursor: "default",
+                overflow: "visible"
+              }}
+            >
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>Guest Practice</h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Try it out instantly without creating an account.</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
+                <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>₹0</span>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ forever</span>
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px 0", display: "flex", flexDirection: "column", gap: "12px", flexGrow: 1 }}>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>1 worksheet generation / day</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>Basic auto-scoring only</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "#ef4444", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✕</span> <span>No detailed feedback explanations</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "#ef4444", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✕</span> <span>No progress tracking or mistakelog</span>
+                </li>
+              </ul>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: "100%", padding: "12px", borderRadius: "10px", fontWeight: 600, border: "1px solid var(--border-glow)" }}
+                onClick={() => {
+                  const el = document.getElementById("practice-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
                 }}
               >
-                <h3 style={{ color: "#a78bfa", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: "1.1rem" }}>
-                  <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "var(--accent-purple)" }}></span>
-                  Student Profile (Free during Beta)
-                </h3>
-                
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", flexGrow: 1 }}>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                    <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span>
-                    <span><strong>Unlimited Practice:</strong> Generate infinite worksheets with no rate limits.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                    <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span>
-                    <span><strong>Adaptive Questions:</strong> 60% of new sheets target previous mistakes automatically.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                    <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span>
-                    <span><strong>Mistake Logs & Heatmap:</strong> Detailed breakdown of concept strengths and weaknesses.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                    <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span>
-                    <span><strong>Interactive Parent Grader:</strong> Mark questions correct/incorrect on-screen inside dashboard.</span>
-                  </li>
-                  <li style={{ display: "flex", gap: "10px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                    <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span>
-                    <span><strong>1-Click Workspace:</strong> Instantly prepopulates details. Quick practice cycles.</span>
-                  </li>
-                </ul>
+                Try Free Generator
+              </button>
+            </div>
+
+            {/* Card 2: Registered Free */}
+            <div
+              className="spotlight-card scroll-reveal"
+              style={{
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "16px",
+                padding: "30px 24px",
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.3s ease",
+                height: "100%",
+                cursor: "default",
+                overflow: "visible"
+              }}
+            >
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>Registered Free</h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Create a free student workspace with OTP confirmation.</p>
               </div>
+              <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
+                <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>₹0</span>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ with OTP sign up</span>
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px 0", display: "flex", flexDirection: "column", gap: "12px", flexGrow: 1 }}>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>5 worksheet generations / day</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>18 detailed evaluations / month</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>1 Child Profile (prefilled & locked grade)</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>Progress reports & mistake logs</span>
+                </li>
+              </ul>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: "100%", padding: "12px", borderRadius: "10px", fontWeight: 700 }}
+                onClick={() => router.push("/dashboard")}
+              >
+                Register Account
+              </button>
+            </div>
+
+            {/* Card 3: Plus Plan (Popular) */}
+            <div
+              className="spotlight-card scroll-reveal"
+              style={{
+                background: "rgba(124, 58, 237, 0.04)",
+                border: "1px solid rgba(124, 58, 237, 0.35)",
+                borderRadius: "16px",
+                padding: "30px 24px",
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.3s ease",
+                height: "100%",
+                position: "relative",
+                cursor: "default",
+                overflow: "visible"
+              }}
+            >
+              <div style={{ position: "absolute", top: "-12px", right: "20px", background: "linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))", color: "#ffffff", fontSize: "0.68rem", fontWeight: 800, padding: "4px 10px", borderRadius: "20px", textTransform: "uppercase", letterSpacing: "0.05em", boxShadow: "0 0 10px rgba(124, 58, 237, 0.4)" }}>
+                Most Popular
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#a78bfa", margin: "0 0 8px 0" }}>PracticeMitra Plus</h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Ideal for regular structured practice and conceptual reviews.</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
+                <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  ₹{systemConfig?.tiers?.plus?.monthlyPriceINR || 199}
+                </span>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ month</span>
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px 0", display: "flex", flexDirection: "column", gap: "12px", flexGrow: 1 }}>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span><strong>Unlimited</strong> worksheet generation</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span><strong>Unlimited</strong> detailed review evaluations</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>1 active child profile workspace</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span><strong>Weekly parent summary emails</strong></span>
+                </li>
+              </ul>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: "100%", padding: "12px", borderRadius: "10px", fontWeight: 700, background: "linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))" }}
+                onClick={() => router.push("/dashboard?mode=signup&tier=PLUS")}
+              >
+                Upgrade to Plus
+              </button>
+            </div>
+
+            {/* Card 4: Family / Pro */}
+            <div
+              className="spotlight-card scroll-reveal"
+              style={{
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "16px",
+                padding: "30px 24px",
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.3s ease",
+                height: "100%",
+                cursor: "default",
+                overflow: "visible"
+              }}
+            >
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>PracticeMitra Family</h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Designed for multiple children and intensive analytics reporting.</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
+                <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  ₹{systemConfig?.tiers?.familyPro?.monthlyPriceINR || 349}
+                </span>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ month</span>
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px 0", display: "flex", flexDirection: "column", gap: "12px", flexGrow: 1 }}>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span><strong>Up to 5 Child Profiles</strong></span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>Unlimited generations & detailed reviews</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span><strong>Priority OCR server processing speed</strong></span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  <span style={{ color: "var(--accent-cyan)", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "14px", height: "1.25em" }}>✓</span> <span>Weekly parent reports & weak-topic heatmap</span>
+                </li>
+              </ul>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: "100%", padding: "12px", borderRadius: "10px", fontWeight: 700 }}
+                onClick={() => router.push("/dashboard?mode=signup&tier=FAMILY_PRO")}
+              >
+                Upgrade to Family
+              </button>
             </div>
           </div>
+
         </section>
       )}
 
@@ -1698,23 +1884,23 @@ export default function HomePage() {
         <div className="faq-container">
           {[
             {
-              q: "What is SheetMate and who is it for?",
-              a: "SheetMate is an AI-powered worksheet generator specifically aligned with the Indian NCERT (CBSE) syllabus for LKG, UKG, and Classes 1 to 8. It's designed for parents and teachers who want to generate personalized, curriculum-accurate math, science, and English practice papers."
+              q: "What is PracticeMitra and who is it for?",
+              a: "PracticeMitra is an AI-powered worksheet generator specifically aligned with the Indian NCERT (CBSE) syllabus for LKG, UKG, and Classes 1 to 8. It's designed for parents and teachers who want to generate personalized, curriculum-accurate math, science, and English practice papers."
             },
             {
               q: "How does the AI personalize worksheets for my child?",
-              a: "When you create a student profile, SheetMate automatically tracks your child's scoring trends and concept errors. For every new worksheet generated, the system intelligently adapts up to 60% of the questions to target their specific conceptual weaknesses, reinforcing learning where they need it most."
+              a: "When you create a student profile, PracticeMitra automatically tracks your child's scoring trends and concept errors. For every new worksheet generated, the system intelligently adapts up to 60% of the questions to target their specific conceptual weaknesses, reinforcing learning where they need it most."
             },
             {
               q: "Is it really free during the Beta phase?",
-              a: "Yes! SheetMate is completely free to use during our Beta period. You can create a profile, generate unlimited worksheets, access dashboard insights, and grade student papers online without any subscription fees or limits."
+              a: "Yes! PracticeMitra is completely free to use during our Beta period. You can create a profile, generate unlimited worksheets, access dashboard insights, and grade student papers online without any subscription fees or limits."
             },
             {
               q: "How does the interactive grading work?",
               a: "No offline answer key scanning needed! You can open a student's generated worksheet on any device (phone, tablet, or PC) and click correct/incorrect directly on the digital checklist. The student's stats, weaknesses list, and history update immediately."
             },
             {
-              q: "Can I use SheetMate as a guest without signing up?",
+              q: "Can I use PracticeMitra as a guest without signing up?",
               a: "Absolutely. You can try our generator as a guest right from the landing page. However, guest generation is limited to 4 worksheets per day, and your child's progress, adaptive learning features, and dashboard stats will not be saved."
             }
           ].map((item, index) => {
@@ -1792,7 +1978,7 @@ export default function HomePage() {
                 Start learning smarter today.
               </h2>
               <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "520px", margin: "0 auto 36px auto", lineHeight: 1.65 }}>
-                Join thousands of students using SheetMate to practice, track, and master their school curriculum.
+                Join thousands of students using PracticeMitra to practice, track, and master their school curriculum.
               </p>
               <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
                 <div className="border-beam-wrapper magnetic-btn" style={{ borderRadius: "10px" }}>
@@ -1802,7 +1988,7 @@ export default function HomePage() {
                     style={{
                       padding: "14px 32px",
                       fontSize: "1rem",
-                      background: "rgba(10, 10, 15, 0.95)",
+                      background: "var(--accent-purple)",
                       color: "#fff",
                       border: "none",
                       fontFamily: "var(--font-heading)",
@@ -1853,13 +2039,13 @@ export default function HomePage() {
               position: "relative",
               width: "60px",
               height: "60px",
-              background: "rgba(10, 10, 15, 0.85)",
+              background: "rgba(255, 255, 255, 0.85)",
               border: "1px solid rgba(124, 58, 237, 0.25)",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 10px 30px rgba(124, 58, 237, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)",
+              boxShadow: "0 10px 30px rgba(124, 58, 237, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.15)",
               backdropFilter: "blur(16px)"
             }}
           >
@@ -1878,7 +2064,7 @@ export default function HomePage() {
                 cx="30" 
                 cy="30" 
                 r="27" 
-                stroke="rgba(255, 255, 255, 0.05)" 
+                stroke="rgba(0, 0, 0, 0.05)" 
                 strokeWidth="2.5" 
                 fill="transparent" 
               />
@@ -1906,7 +2092,7 @@ export default function HomePage() {
             {/* Streak flame details */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
               <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>🔥</span>
-              <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#fff", marginTop: "2px" }}>
+              <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
                 {studentStats?.sheetsCount || 0}
               </span>
             </div>
@@ -1919,16 +2105,16 @@ export default function HomePage() {
                 right: "70px",
                 top: "50%",
                 transform: "translateY(-50%)",
-                background: "rgba(10, 10, 15, 0.95)",
-                border: "1px solid rgba(124, 58, 237, 0.3)",
+                background: "rgba(255, 255, 255, 0.95)",
+                border: "1px solid rgba(124, 58, 237, 0.15)",
                 padding: "8px 12px",
                 borderRadius: "8px",
                 fontSize: "0.72rem",
-                color: "#fff",
+                color: "var(--text-primary)",
                 whiteSpace: "nowrap",
                 pointerEvents: "none",
                 opacity: 0,
-                boxShadow: "0 10px 20px rgba(0, 0, 0, 0.5)",
+                boxShadow: "0 10px 20px rgba(0, 0, 0, 0.08)",
                 transition: "opacity 0.25s ease, transform 0.25s ease",
                 zIndex: 100
               }}
@@ -1951,12 +2137,12 @@ export default function HomePage() {
           padding: "40px 0",
           color: "var(--text-muted)",
           fontSize: "0.8rem",
-          borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+          borderTop: "1px solid rgba(0, 0, 0, 0.06)",
           maxWidth: "1200px",
           margin: "0 auto"
         }}
       >
-        <p>&copy; {new Date().getFullYear()} SheetMate (sheetmate.in). All rights reserved. English-medium MVP v1.0.0.</p>
+        <p>&copy; {new Date().getFullYear()} PracticeMitra (practicemitra.in). All rights reserved. English-medium MVP v1.0.0.</p>
       </footer>
     </main>
   );

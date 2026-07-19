@@ -87,6 +87,15 @@ Return JSON in this schema:
     console.error("[SEO Page API Error] Failed to retrieve cached sheet:", err);
   }
 
+  const getQuestionNumber = (secIdx: number, qIdx: number) => {
+    let count = 0;
+    const sections = worksheetData?.sections || [];
+    for (let i = 0; i < secIdx; i++) {
+      count += sections[i]?.questions?.length || 0;
+    }
+    return count + qIdx + 1;
+  };
+
   return (
     <main style={{ minHeight: "100vh", padding: "40px 20px", background: "#0a0a0f", color: "#f8fafc" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
@@ -164,7 +173,12 @@ Return JSON in this schema:
                   </h3>
                   {sec.questions?.map((q: any, qIdx: number) => (
                     <div key={q.id} style={{ marginBottom: "16px", fontSize: "0.9rem" }}>
-                      <p style={{ fontWeight: 600 }}>Q{qIdx + 1}: {q.text}</p>
+                      <p style={{ fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span>Q{getQuestionNumber(sIdx, qIdx)}: {q.text}</span>
+                        <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500, whiteSpace: "nowrap", marginLeft: "10px" }}>
+                          [{q.marks || (q.type === "MCQ" ? 1 : q.type === "SHORT" ? 2 : 4)} {(q.marks === 1 || (!q.marks && q.type === "MCQ")) ? 'Mark' : 'Marks'}]
+                        </span>
+                      </p>
                       {q.options && (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", paddingLeft: "12px", marginTop: "6px" }}>
                           {q.options.map((opt: string, oIdx: number) => (
@@ -180,7 +194,7 @@ Return JSON in this schema:
 
             {/* Print trigger notice */}
             <div style={{ marginTop: "30px", borderTop: "1.5px solid #cbd5e1", paddingTop: "12px", textAlign: "center", fontSize: "0.8rem", color: "#475569" }}>
-              <span>Generated on sheetmate.in &bull; Save or print directly to download</span>
+              <span>Generated on practicemitra.in &bull; Save or print directly to download</span>
             </div>
           </div>
         ) : (

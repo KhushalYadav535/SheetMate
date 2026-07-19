@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { queryOpenRouter } from "@/lib/openrouter";
+import { getSystemConfig } from "@/lib/config";
 
 // Validation lists
 const VALID_BOARDS = ["CBSE"];
@@ -11,7 +12,7 @@ const VALID_DIFFICULTIES = ["EASY", "MEDIUM", "HARD"];
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { studentProfileId, board, grade, subject, topics, difficulty, includeAnswerKey } = body;
+    const { studentProfileId, board, grade, subject, topics, difficulty, includeAnswerKey, mcqCount, shortCount, longCount } = body;
     // topics can be string[] (wizard) or string (chat agent legacy)
     const topicsArray: string[] = Array.isArray(topics) ? topics : [topics].filter(Boolean);
     const topicLabel = topicsArray.join(", ");
@@ -37,6 +38,20 @@ export async function POST(req: NextRequest) {
     // Determine age category
     const isEarlyLearner = ["LKG", "UKG", "Class 1", "Class 2"].includes(grade);
 
+    // Resolve question counts dynamically
+    const resolvedMcqCount = mcqCount !== undefined ? Math.max(0, Math.min(20, Number(mcqCount))) : (isEarlyLearner ? 5 : 5);
+    const resolvedShortCount = shortCount !== undefined ? Math.max(0, Math.min(10, Number(shortCount))) : (isEarlyLearner ? 5 : 3);
+    const resolvedLongCount = longCount !== undefined ? Math.max(0, Math.min(10, Number(longCount))) : (isEarlyLearner ? 5 : 2);
+
+    const totalQuestions = resolvedMcqCount + resolvedShortCount + resolvedLongCount;
+    if (totalQuestions < 5) {
+      return NextResponse.json({ error: "A worksheet must contain a combined minimum of 5 questions in total." }, { status: 400 });
+    }
+
+    const dynamicTotalMarks = isEarlyLearner
+      ? (resolvedMcqCount + resolvedShortCount + resolvedLongCount)
+      : (resolvedMcqCount * 1 + resolvedShortCount * 2 + resolvedLongCount * 4);
+
     // Get client IP for guest rate limiting
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
                      req.headers.get("x-real-ip") || 
@@ -44,14 +59,119 @@ export async function POST(req: NextRequest) {
 
     let weaknessContext = "";
 
-    // 2. If authenticated user, fetch student profile and weakness context
-    if (studentProfileId) {
+    // Fetch dynamic config
+    const config = await getSystemConfig();
+
+    // Check limits
+    if (!studentProfileId) {
+      // Guest Rate Limits
+      // Guest User: Check Worksheet Cache first
+      const cacheKey = `${board}-${grade}-${subject}-${topicLabel}-${difficulty}-${resolvedMcqCount}-${resolvedShortCount}-${resolvedLongCount}`.toLowerCase().replace(/\s+/g, "-");
+      const cachedSheet = await prisma.worksheetCache.findUnique({
+        where: { cacheKey }
+      });
+
+      if (cachedSheet) {
+        console.log(`[Cache Hit] Returning cached worksheet for: ${cacheKey}`);
+        
+        // Log the guest generation record for analytics
+        const savedWorksheet = await prisma.generatedWorksheet.create({
+          data: {
+            studentProfileId: null,
+            clientIp,
+            subject,
+            topic: topicLabel,
+            difficulty,
+            totalMarks: dynamicTotalMarks,
+            contentJson: cachedSheet.contentJson
+          }
+        });
+
+        return NextResponse.json({
+          worksheetId: savedWorksheet.id,
+          data: JSON.parse(cachedSheet.contentJson)
+        });
+      }
+
+      // Guest User: Enforce Daily IP Limit from config
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const guestDailyLimit = config.tiers.guest.dailyGenerationLimit || 1;
+      const guestSheetCount = await prisma.generatedWorksheet.count({
+        where: {
+          studentProfileId: null,
+          clientIp,
+          createdAt: { gte: oneDayAgo }
+        }
+      });
+
+      if (guestSheetCount >= guestDailyLimit) {
+        return NextResponse.json({
+          error: `You have reached the daily limit of ${guestDailyLimit} worksheet for guest users. Create a free student profile now to unlock unlimited worksheet generation and performance tracking!`
+        }, { status: 429 });
+      }
+    } else {
+      // Registered / Paid User Limits
       const profile = await prisma.studentProfile.findUnique({
         where: { id: studentProfileId }
       });
 
       if (!profile) {
         return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
+      }
+
+      // Check parent contact subscription
+      const contact = (profile.parentPhone || profile.parentEmail || "").trim();
+      const sub = contact ? await prisma.parentSubscription.findUnique({ where: { contact } }) : null;
+      const tier = sub?.tier || "FREE";
+
+      if (tier === "FREE") {
+        // Enforce Free daily and monthly limits from config
+        const dailyLimit = config.tiers.registeredFree.dailyGenerationLimit || 5;
+        const monthlyLimit = config.tiers.registeredFree.monthlyGenerationLimit || 150;
+
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        // Find all profile IDs sharing the same parent contact to prevent rate-limit bypass by creating other children
+        let profileIds = [studentProfileId];
+        if (contact) {
+          const isEmail = contact.includes("@");
+          const sharedProfiles = await prisma.studentProfile.findMany({
+            where: isEmail 
+              ? { parentEmail: { equals: contact, mode: "insensitive" } }
+              : { parentPhone: { contains: contact.replace(/\D/g, "").slice(-10) } },
+            select: { id: true }
+          });
+          profileIds = sharedProfiles.map(p => p.id);
+        }
+
+        const dailyCount = await prisma.generatedWorksheet.count({
+          where: {
+            studentProfileId: { in: profileIds },
+            createdAt: { gte: oneDayAgo }
+          }
+        });
+
+        if (dailyCount >= dailyLimit) {
+          return NextResponse.json({
+            error: `You have reached the daily limit of ${dailyLimit} worksheets for free registered users. Upgrade to Plus or Family/Pro for unlimited generations!`
+          }, { status: 429 });
+        }
+
+        const monthlyCount = await prisma.generatedWorksheet.count({
+          where: {
+            studentProfileId: { in: profileIds },
+            createdAt: { gte: startOfMonth }
+          }
+        });
+
+        if (monthlyCount >= monthlyLimit) {
+          return NextResponse.json({
+            error: `You have reached the monthly limit of ${monthlyLimit} worksheets for free registered users. Upgrade to Plus or Family/Pro for unlimited generations!`
+          }, { status: 429 });
+        }
       }
 
       // Fetch top 3 weak subtopics for this subject
@@ -70,50 +190,6 @@ export async function POST(req: NextRequest) {
       if (weaknesses.length > 0) {
         weaknessContext = weaknesses.map((w: any) => w.subtopic).join(", ");
       }
-    } else {
-      // 3. Guest User: Check Worksheet Cache first
-      const cacheKey = `${board}-${grade}-${subject}-${topicLabel}-${difficulty}`.toLowerCase().replace(/\s+/g, "-");
-      const cachedSheet = await prisma.worksheetCache.findUnique({
-        where: { cacheKey }
-      });
-
-      if (cachedSheet) {
-        console.log(`[Cache Hit] Returning cached worksheet for: ${cacheKey}`);
-        
-        // Log the guest generation record for analytics
-        const savedWorksheet = await prisma.generatedWorksheet.create({
-          data: {
-            studentProfileId: null,
-            clientIp,
-            subject,
-            topic: topicLabel,
-            difficulty,
-            totalMarks: isEarlyLearner ? 15 : 20,
-            contentJson: cachedSheet.contentJson
-          }
-        });
-
-        return NextResponse.json({
-          worksheetId: savedWorksheet.id,
-          data: JSON.parse(cachedSheet.contentJson)
-        });
-      }
-
-      // Guest User: Enforce Daily IP Limit (Max 4 per 24 hours)
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const guestSheetCount = await prisma.generatedWorksheet.count({
-        where: {
-          studentProfileId: null,
-          clientIp,
-          createdAt: { gte: oneDayAgo }
-        }
-      });
-
-      if (guestSheetCount >= 4) {
-        return NextResponse.json({
-          error: "You have reached the daily limit of 4 worksheets for guest users. Create a free student profile now to unlock unlimited worksheet generation and performance tracking!"
-        }, { status: 429 });
-      }
     }
 
     // 4. Construct prompts based on grade level
@@ -124,8 +200,49 @@ export async function POST(req: NextRequest) {
     let userPrompt = "";
 
     if (isEarlyLearner) {
-      systemPrompt = `You are an early childhood educator in India. You design highly engaging, printable, text-based activity sheets in ${mediumText}. You must return only a valid JSON object matching the requested schema. Do not output any markdown formatting like \`\`\`json or regular code blocks.`;
+      systemPrompt = `You are an early childhood educator in India. You design highly engaging, printable, text-based activity sheets in ${mediumText} that are perfectly tailored to the cognitive ability of ${grade} students. Keep all instructions short, using extremely simple vocabulary appropriate for a young child's level. You must return only a valid JSON object matching the requested schema. Do not output any markdown formatting like \`\`\`json or regular code blocks.`;
       
+      let activitiesRules = "";
+      let activitiesSchemaList = [];
+      let activityIndex = 1;
+      
+      if (resolvedMcqCount > 0) {
+        activitiesRules += `   - Activity ${activityIndex}: "Matching game" (Match left items to right items). Provide exactly ${resolvedMcqCount} items.\n`;
+        activitiesSchemaList.push(`    {
+      "type": "MATCHING",
+      "instruction": "Matching instruction text...",
+      "items": [
+        {"left": "Dog", "right": "Bark"} // exactly ${resolvedMcqCount} items here
+      ]
+    }`);
+        activityIndex++;
+      }
+      
+      if (resolvedShortCount > 0) {
+        activitiesRules += `   - Activity ${activityIndex}: "Fill in the Blanks". Provide exactly ${resolvedShortCount} simple sentences with a blank "____" and a list of options in a "wordBank" array.\n`;
+        activitiesSchemaList.push(`    {
+      "type": "FILL_BLANKS",
+      "instruction": "Fill in the blank instruction...",
+      "wordBank": ["Sun", "Moon"],
+      "questions": [
+        {"id": 1, "sentence": "The ____ shines brightly.", "answer": "Sun", "marks": 1} // exactly ${resolvedShortCount} sentences here
+      ]
+    }`);
+        activityIndex++;
+      }
+      
+      if (resolvedLongCount > 0) {
+        activitiesRules += `   - Activity ${activityIndex}: "Odd One Out". Generate exactly ${resolvedLongCount} rows. Each row contains 4 words, where 1 word does not fit the category.\n`;
+        activitiesSchemaList.push(`    {
+      "type": "ODD_OUT",
+      "instruction": "Find the odd word in each row.",
+      "questions": [
+        {"id": 1, "words": ["Apple", "Banana", "Rose", "Mango"], "answer": "Rose", "explanation": "Rose is a flower, others are fruits.", "marks": 1} // exactly ${resolvedLongCount} rows here
+      ]
+    }`);
+        activityIndex++;
+      }
+
       userPrompt = `Generate a text-based activity sheet for:
 Grade: ${grade}
 Subject: ${subject}
@@ -135,12 +252,12 @@ Medium of Instruction: ${mediumText}
 
 ACTIVITY CONSTRAINTS:
 1. Do not reference, generate, or attempt to render any images, illustrations, or figures. The output must be 100% text-based.
-2. Structure the document into exactly 3 activities:
-   - Activity 1: "Matching game" (Match left items to right items). Provide exactly 5 items.
-   - Activity 2: "Fill in the Blanks". Provide exactly 5 simple sentences with a blank "____" and a list of options in a "wordBank" array.
-   - Activity 3: "Odd One Out". Generate exactly 5 rows. Each row contains 4 words, where 1 word does not fit the category.
-3. ${answerKey ? "Provide correct answers for every activity item in the answer fields." : "Set all answer fields to empty string \"\" — do NOT include any answers."}
-${isHindi ? "4. Since the subject is Hindi, ALL instructions, questions, matching items, words in options, wordBank, and answer fields MUST be written entirely in Hindi (Devanagari script)." : ""}
+2. Structure the document into exactly ${activityIndex - 1} activities:
+${activitiesRules}
+3. Provide correct answers for every activity item in the answer fields. (Always solve and include answers, do not leave them empty).
+4. Use localized naming conventions (e.g. Indian names, currency in Rupees '₹' where applicable).
+5. Focus strictly on simple foundational skills (counting, matching, letter sounds, basic vocabulary) aligned with the ${grade} syllabus. Do not ask complex comprehension, logic, or writing questions beyond the basic syllabus parameters of this grade.
+${isHindi ? "6. Since the subject is Hindi, ALL instructions, questions, matching items, words in options, wordBank, and answer fields MUST be written entirely in Hindi (Devanagari script)." : ""}
 
 Return JSON in this schema:
 {
@@ -148,40 +265,77 @@ Return JSON in this schema:
   "grade": "${grade}",
   "subject": "${subject}",
   "activities": [
-    {
-      "type": "MATCHING",
-      "instruction": "Matching instruction text...",
-      "items": [
-        {"left": "Dog", "right": "Bark"},
-        {"left": "Cat", "right": "Meow"},
-        {"left": "Cow", "right": "Moo"},
-        {"left": "Sheep", "right": "Baa"},
-        {"left": "Lion", "right": "Roar"}
-      ]
-    },
-    {
-      "type": "FILL_BLANKS",
-      "instruction": "Fill in the blank instruction...",
-      "wordBank": ["Sun", "Moon", "Star", "Cloud", "Sky"],
-      "questions": [
-        {"id": 1, "sentence": "The ____ shines brightly in the day.", "answer": "Sun"},
-        {"id": 2, "sentence": "We see the ____ at night.", "answer": "Moon"},
-        {"id": 3, "sentence": "A twinkle ____ is far away.", "answer": "Star"},
-        {"id": 4, "sentence": "A white ____ brings rain.", "answer": "Cloud"},
-        {"id": 5, "sentence": "The birds fly in the blue ____.", "answer": "Sky"}
-      ]
-    },
-    {
-      "type": "ODD_OUT",
-      "instruction": "Find the odd word in each row.",
-      "questions": [
-        {"id": 1, "words": ["Apple", "Banana", "Rose", "Mango"], "answer": "Rose", "explanation": "Rose is a flower, others are fruits."}
-      ]
-    }
+${activitiesSchemaList.join(",\n")}
   ]
 }`;
     } else {
-      systemPrompt = `You are an expert school workbook designer and textbook publisher in India. You generate CBSE/ICSE exam paper aligned worksheets in ${mediumText}. You must return only a valid JSON object matching the requested schema. Do not output any markdown formatting like \`\`\`json or regular code blocks.`;
+      systemPrompt = `You are an expert school workbook designer and textbook publisher in India. You generate rigorous, CBSE exam paper aligned worksheets in ${mediumText} that are perfect for standard exam preparation. You must design challenging, relevant, syllabus-aligned questions at the exact academic level of ${grade}. Do not generate generic, random, or overly simple trivia questions. You must return only a valid JSON object matching the requested schema. Do not output any markdown formatting like \`\`\`json or regular code blocks.`;
+
+      let workbookRules = "";
+      let schemaSections = [];
+      const alphabets = ["A", "B", "C", "D"];
+      let currentAlphabetIdx = 0;
+      let questionIdCounter = 1;
+
+      if (resolvedMcqCount > 0) {
+        const secLetter = alphabets[currentAlphabetIdx++];
+        workbookRules += `   - Section ${secLetter}: Multiple Choice Questions (exactly ${resolvedMcqCount} questions, include 4 choices in options array, designate correct answer).\n`;
+        schemaSections.push(`    {
+      "name": "Section ${secLetter}: Multiple Choice Questions",
+      "questions": [
+        {
+          "id": "q${questionIdCounter}",
+          "text": "Question text here?",
+          "type": "MCQ",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "answer": "Option B",
+          "marks": 1,
+          "subtopic": "Subtopic tag",
+          "solutionExplanation": "Detailed explanation of the solution..."
+        } // generate exactly ${resolvedMcqCount} questions (q${questionIdCounter} to q${questionIdCounter + resolvedMcqCount - 1})
+      ]
+    }`);
+        questionIdCounter += resolvedMcqCount;
+      }
+
+      if (resolvedShortCount > 0) {
+        const secLetter = alphabets[currentAlphabetIdx++];
+        workbookRules += `   - Section ${secLetter}: Short Answer Questions (exactly ${resolvedShortCount} questions, checking conceptual definitions).\n`;
+        schemaSections.push(`    {
+      "name": "Section ${secLetter}: Short Answer Questions",
+      "questions": [
+        {
+          "id": "q${questionIdCounter}",
+          "text": "Short answer question?",
+          "type": "SHORT",
+          "answer": "Correct key answer details...",
+          "marks": 2,
+          "subtopic": "Subtopic tag",
+          "solutionExplanation": "Detailed conceptual grading guide for parents..."
+        } // generate exactly ${resolvedShortCount} questions (q${questionIdCounter} to q${questionIdCounter + resolvedShortCount - 1})
+      ]
+    }`);
+        questionIdCounter += resolvedShortCount;
+      }
+
+      if (resolvedLongCount > 0) {
+        const secLetter = alphabets[currentAlphabetIdx++];
+        workbookRules += `   - Section ${secLetter}: Word Problems or Critical Thinking Questions (exactly ${resolvedLongCount} questions, requiring long explanations).\n`;
+        schemaSections.push(`    {
+      "name": "Section ${secLetter}: Critical Thinking Questions",
+      "questions": [
+        {
+          "id": "q${questionIdCounter}",
+          "text": "Word problem or analysis question?",
+          "type": "LONG",
+          "answer": "Final solution values...",
+          "marks": 4,
+          "subtopic": "Subtopic tag",
+          "solutionExplanation": "Detailed step-by-step solution steps..."
+        } // generate exactly ${resolvedLongCount} questions (q${questionIdCounter} to q${questionIdCounter + resolvedLongCount - 1})
+      ]
+    }`);
+      }
 
       userPrompt = `Generate a printable workbook sheet for:
 Board: ${board}
@@ -194,14 +348,13 @@ Medium of Instruction: ${mediumText}
 ${weaknessContext ? `Focus Concept Guidelines: Dedicate 60% of the worksheet questions to directly test these concepts that the student previously struggled with: "${weaknessContext}".` : ""}
 
 WORKBOOK RULES:
-1. Divide the worksheet into three sections:
-   - Section A: Multiple Choice Questions (5 questions, include 4 choices in options array, designate correct answer).
-   - Section B: Short Answer Questions (3 questions, checking conceptual definitions).
-   - Section C: Word Problems or Critical Thinking Questions (2 questions, requiring long explanations).
-2. Questions must align directly with the ${board} syllabus for ${grade}.
-3. ${answerKey ? "Create a step-by-step solutions explanation for each question, designed for parents." : "Set all answer and solutionExplanation fields to empty string \"\" — do NOT include any answers."}
-4. Use localized naming conventions (e.g. Indian names, currency in Rupees '₹' where applicable).
-${isHindi ? "5. Since the subject is Hindi, ALL titles, section names, question texts, MCQ options, answers, subtopic tags, and solution explanations MUST be written entirely in Hindi (Devanagari script)." : ""}
+1. Divide the worksheet into sections as follows:
+${workbookRules}
+2. Questions must align directly with the ${board} syllabus and textbook guidelines for ${grade}. They must resemble real CBSE final or periodic test paper questions to serve as highly effective exam preparation.
+3. Every question must be clear, relevant, and test the conceptual depth or mathematical calculations expected in ${grade} (e.g. numerical word problems for Math, key scientific principles for Science, standard grammatical rules for English/Hindi). Do not generate generic, random, or overly simple trivia questions.
+4. Create a step-by-step solutions explanation for each question, designed for parents. You must ALWAYS solve each question and include correct answers, do not leave the answer or solutionExplanation fields empty under any circumstance.
+5. Use localized naming conventions (e.g. Indian names, currency in Rupees '₹' where applicable).
+${isHindi ? "6. Since the subject is Hindi, ALL titles, section names, question texts, MCQ options, answers, subtopic tags, and solution explanations MUST be written entirely in Hindi (Devanagari script)." : ""}
 
 Return JSON in this schema:
 {
@@ -210,62 +363,65 @@ Return JSON in this schema:
   "grade": "${grade}",
   "subject": "${subject}",
   "sections": [
-    {
-      "name": "Section A: Multiple Choice Questions",
-      "questions": [
-        {
-          "id": "q1",
-          "text": "Question text here?",
-          "type": "MCQ",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "answer": "Option B",
-          "subtopic": "Subtopic tag",
-          "solutionExplanation": "Detailed explanation of the solution..."
-        }
-      ]
-    },
-    {
-      "name": "Section B: Short Answer Questions",
-      "questions": [
-        {
-          "id": "q6",
-          "text": "Short answer question?",
-          "type": "SHORT",
-          "answer": "Correct key answer details...",
-          "subtopic": "Subtopic tag",
-          "solutionExplanation": "Detailed conceptual grading guide for parents..."
-        }
-      ]
-    },
-    {
-      "name": "Section C: Critical Thinking Questions",
-      "questions": [
-        {
-          "id": "q9",
-          "text": "Word problem or analysis question?",
-          "type": "LONG",
-          "answer": "Final solution values...",
-          "subtopic": "Subtopic tag",
-          "solutionExplanation": "Detailed step-by-step solution steps..."
-        }
-      ]
-    }
+${schemaSections.join(",\n")}
   ]
 }`;
     }
 
     // 5. Query OpenRouter with Local Fallback Engine
-    let resultJson;
+    let resultJson: any;
     try {
-      resultJson = await queryOpenRouter(userPrompt, systemPrompt);
+      const defaultModel = config.modelRouting.generation.defaultModel || "haiku";
+      resultJson = await queryOpenRouter(userPrompt, systemPrompt, undefined, undefined, defaultModel);
     } catch (error) {
       console.warn("[OpenRouter Failed] Falling back to local curriculum mock generator:", error);
       resultJson = generateLocalMockWorksheet(board, grade, subject, topicLabel, difficulty);
     }
 
-    // Add includeAnswerKey to result JSON so it is saved in the DB
+    let actualTotalMarks = 0;
+    // Add includeAnswerKey and programmatically ensure marks property on each question/activity item
     if (resultJson && typeof resultJson === "object") {
-      (resultJson as any).includeAnswerKey = answerKey;
+      resultJson.includeAnswerKey = answerKey;
+      
+      if (isEarlyLearner) {
+        const activities = resultJson.activities || [];
+        activities.forEach((act: any) => {
+          if (act.type === "MATCHING" && act.items) {
+            act.items.forEach((item: any) => {
+              if (item.marks === undefined || item.marks === null) {
+                item.marks = 1;
+              }
+            });
+            actualTotalMarks += act.items.length;
+          } else if (act.questions) {
+            act.questions.forEach((q: any) => {
+              if (q.marks === undefined || q.marks === null) {
+                q.marks = 1;
+              }
+            });
+            actualTotalMarks += act.questions.length;
+          }
+        });
+      } else {
+        const sections = resultJson.sections || [];
+        sections.forEach((sec: any) => {
+          if (sec.questions) {
+            sec.questions.forEach((q: any) => {
+              if (q.marks === undefined || q.marks === null) {
+                if (q.type === "MCQ") q.marks = 1;
+                else if (q.type === "SHORT") q.marks = 2;
+                else if (q.type === "LONG" || q.type === "CRITICAL") q.marks = 4;
+                else q.marks = 1;
+              }
+              actualTotalMarks += q.marks;
+            });
+          }
+        });
+      }
+    }
+
+    if (actualTotalMarks === 0) {
+      actualTotalMarks = dynamicTotalMarks;
     }
 
     const contentString = JSON.stringify(resultJson);
@@ -278,14 +434,14 @@ Return JSON in this schema:
         subject,
         topic: topicLabel,
         difficulty,
-        totalMarks: isEarlyLearner ? 15 : 20,
+        totalMarks: actualTotalMarks,
         contentJson: contentString
       }
     });
 
     // 7. If guest request, save to cache table for future guest lookups
     if (!studentProfileId) {
-      const cacheKey = `${board}-${grade}-${subject}-${topicLabel}-${difficulty}`.toLowerCase().replace(/\s+/g, "-");
+      const cacheKey = `${board}-${grade}-${subject}-${topicLabel}-${difficulty}-${resolvedMcqCount}-${resolvedShortCount}-${resolvedLongCount}`.toLowerCase().replace(/\s+/g, "-");
       await prisma.worksheetCache.upsert({
         where: { cacheKey },
         update: { contentJson: contentString },

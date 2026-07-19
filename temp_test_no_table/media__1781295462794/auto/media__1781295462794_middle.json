@@ -1,0 +1,112 @@
+{
+    "pdf_info": [
+        {
+            "preproc_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        14,
+                        106,
+                        153,
+                        165
+                    ],
+                    "blocks": [
+                        {
+                            "score": 0.5768,
+                            "bbox": [
+                                14,
+                                106,
+                                153,
+                                165
+                            ],
+                            "index": 1,
+                            "type": "table_body",
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        14,
+                                        106,
+                                        153,
+                                        165
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                14,
+                                                106,
+                                                153,
+                                                165
+                                            ],
+                                            "type": "table",
+                                            "html": "",
+                                            "image_path": "18d68f19926c8e428bf02a301c309baa58e47900f14701cb745e94c986a12a66.jpg"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1,
+                    "score": 0.5768
+                }
+            ],
+            "page_idx": 0,
+            "page_size": [
+                207,
+                368
+            ],
+            "discarded_blocks": [],
+            "para_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        14,
+                        106,
+                        153,
+                        165
+                    ],
+                    "blocks": [
+                        {
+                            "score": 0.5768,
+                            "bbox": [
+                                14,
+                                106,
+                                153,
+                                165
+                            ],
+                            "index": 1,
+                            "type": "table_body",
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        14,
+                                        106,
+                                        153,
+                                        165
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                14,
+                                                106,
+                                                153,
+                                                165
+                                            ],
+                                            "type": "table",
+                                            "html": "",
+                                            "image_path": "18d68f19926c8e428bf02a301c309baa58e47900f14701cb745e94c986a12a66.jpg"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1,
+                    "score": 0.5768
+                }
+            ]
+        }
+    ],
+    "_backend": "pipeline",
+    "_version_name": "3.3.1"
+}

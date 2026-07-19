@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import OfflineDetector from "@/components/OfflineDetector";
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: "#f8fafc",
 };
 
 export const metadata: Metadata = {
-  title: "SheetMate | AI-Powered School Worksheet Generator",
+  title: "PracticeMitra | AI-Powered School Worksheet Generator",
   description: "Generate customized practice worksheets aligned to LKG to Class 8 syllabus in seconds. Automatically target parent analytics and homework weaknesses.",
   keywords: [
     "Worksheet generator",
@@ -16,22 +17,22 @@ export const metadata: Metadata = {
     "personalized math practice sheets",
     "adaptive student learning dashboard",
   ],
-  authors: [{ name: "SheetMate Team" }],
-  metadataBase: new URL("https://sheetmate.app"),
+  authors: [{ name: "PracticeMitra Team" }],
+  metadataBase: new URL("https://practicemitra.in"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "SheetMate | AI-Powered School Worksheet Generator",
+    title: "PracticeMitra | AI-Powered School Worksheet Generator",
     description: "Generate customized practice worksheets aligned to LKG to Class 8 syllabus in seconds. Target parent analytics and learning weaknesses automatically.",
-    url: "https://sheetmate.app",
-    siteName: "SheetMate",
+    url: "https://practicemitra.in",
+    siteName: "PracticeMitra",
     images: [
       {
         url: "/icon.png",
         width: 512,
         height: 512,
-        alt: "SheetMate AI school worksheet generator",
+        alt: "PracticeMitra AI school worksheet generator",
       },
     ],
     locale: "en_IN",
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SheetMate | AI-Powered School Worksheet Generator",
+    title: "PracticeMitra | AI-Powered School Worksheet Generator",
     description: "Generate customized practice worksheets aligned to school board syllabus automatically.",
     images: ["/icon.png"],
   },
@@ -64,7 +65,7 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "SheetMate",
+    "name": "PracticeMitra",
     "operatingSystem": "All",
     "applicationCategory": "EducationalApplication",
     "offers": {
@@ -89,7 +90,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="noise-overlay" />
-        {children}
+        <OfflineDetector>
+          {children}
+        </OfflineDetector>
       </body>
     </html>
   );

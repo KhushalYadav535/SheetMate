@@ -79,6 +79,7 @@ WorksheetCache        → cached AI output for guest mode (by topic key)
 ### Prerequisites
 
 - Node.js 18+
+- Python 3.10+ (for OCR service)
 - One or more [OpenRouter](https://openrouter.ai) API keys (free tier works)
 
 ### Installation
@@ -88,12 +89,13 @@ WorksheetCache        → cached AI output for guest mode (by topic key)
 git clone https://github.com/Ayush07571/SheetMate.git
 cd sheetmate_project
 
-# Install dependencies
+# Install Next.js dependencies
 npm install
 
 # Set up environment variables
 cp .env.example .env
 # Add your OPENROUTER_API_KEY to .env
+# Add OCR_SERVICE_URL=http://localhost:8000 to .env
 
 # Push Prisma schema to the database (or run migrations)
 npx prisma db push
@@ -103,6 +105,37 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 🐍 FastAPI OCR Microservice Setup
+
+To run the AI PDF Reviewer, start the companion Python FastAPI microservice that handles PDF page conversion, OpenCV rectangle contour detection, perspective correction, and PaddleOCR text extraction.
+
+#### Install Poppler (required for PDF-to-image extraction)
+- **Windows**: Download poppler for Windows and add the `bin/` directory to your system environment variables `PATH`.
+- **macOS**: Run `brew install poppler`.
+- **Linux (Ubuntu/Debian)**: Run `sudo apt-get install poppler-utils`.
+
+#### Run the Microservice
+1. Open a new terminal in the project root:
+   ```bash
+   cd ocr-service
+   ```
+2. Create and activate a Python virtual environment:
+   ```bash
+   python -m venv venv
+   # On Windows:
+   .\venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the service on port 8000:
+   ```bash
+   uvicorn main:app --port 8000
+   ```
 
 ### Environment Variables
 

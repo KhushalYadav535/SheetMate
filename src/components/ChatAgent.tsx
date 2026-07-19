@@ -13,20 +13,23 @@ export default function ChatAgent() {
   const [studentProfileId, setStudentProfileId] = useState<string | null>(null);
   const [studentProfile, setStudentProfile] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitModalMsg, setLimitModalMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hi! I am SheetMate AI. 📚 Tell me what worksheet you want to generate (e.g. 'Give me a Class 5 Math worksheet on Fractions, Easy difficulty')."
+      content: "Hi! I am PracticeMitra AI. 📚 Tell me what worksheet you want to generate (e.g. 'Give me a Class 5 Math worksheet on Fractions, Easy difficulty')."
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showErrorChips, setShowErrorChips] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Sync profile details on load
   useEffect(() => {
-    const savedId = localStorage.getItem("sheetmate_profile_id");
+    const savedId = localStorage.getItem("practicemitra_profile_id");
     if (savedId) {
       setStudentProfileId(savedId);
       fetch(`/api/student/dashboard?id=${savedId}`)
@@ -61,6 +64,7 @@ export default function ChatAgent() {
     if (textToSend === undefined) {
       setInput("");
     }
+    setShowErrorChips(false);
 
     const updatedHistory = [...messages, { role: "user", content: text } as ChatMessage];
     setMessages(updatedHistory);
@@ -88,7 +92,7 @@ export default function ChatAgent() {
       
       setMessages(prev => [...prev, { role: "assistant", content: data.clarifyingMessage }]);
 
-      if (data.params) {
+      if (data.params && data.isComplete) {
         // Parameters resolved! Call generate API
         setMessages(prev => [
           ...prev, 
@@ -105,7 +109,10 @@ export default function ChatAgent() {
             subject: data.params.subject || "MATH",
             topics: [data.params.topic || "General Topic"],
             difficulty: data.params.difficulty || "MEDIUM",
-            includeAnswerKey: !!studentProfileId
+            includeAnswerKey: !!studentProfileId,
+            mcqCount: data.params.mcqCount,
+            shortCount: data.params.shortCount,
+            longCount: data.params.longCount
           })
         });
 
@@ -115,6 +122,28 @@ export default function ChatAgent() {
         }
 
         const genData = await genRes.json();
+        
+        if (!studentProfileId) {
+          try {
+            const guestHistoryStr = sessionStorage.getItem("practicemitra_guest_history");
+            const history = guestHistoryStr ? JSON.parse(guestHistoryStr) : [];
+            const newRecord = {
+              id: genData.worksheetId,
+              subject: data.params.subject || "MATH",
+              topic: data.params.topic || "General Topic",
+              difficulty: data.params.difficulty || "MEDIUM",
+              grade: data.params.grade || "Class 6",
+              createdAt: new Date().toISOString(),
+              score: null
+            };
+            if (!history.some((item: any) => item.id === genData.worksheetId)) {
+              const updated = [newRecord, ...history].slice(0, 5); // limit to last 5
+              sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(updated));
+            }
+          } catch (e) {
+            console.error("Error writing chatbot guest history:", e);
+          }
+        }
         
         setMessages(prev => [
           ...prev, 
@@ -126,11 +155,29 @@ export default function ChatAgent() {
         }, 1200);
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("[Chatbot Error]:", err);
+      const errMsg = err.message || "Sorry, I ran into an error.";
+      
+      let replyContent = "";
+      if (errMsg.includes("limit") || errMsg.includes("guest") || errMsg.includes("rate")) {
+        replyContent = `⚠️ ${errMsg}`;
+        setLimitModalMsg(errMsg);
+        setShowLimitModal(true);
+      } else {
+        replyContent = `Oops, I'm having trouble processing your request. Let's make it easier: you can choose from the options below, or type your request directly.
+
+1. **Grades**: LKG, UKG, Class 1, Class 2, Class 3, Class 4, Class 5, Class 6, Class 7, Class 8
+2. **Subjects**: MATH, SCIENCE, ENGLISH, EVS, HINDI, SST
+3. **Formats**: MIXED (Mixed), MCQ (Multiple Choice), SHORT (Short Answer), CRITICAL (Critical Thinking)
+
+Feel free to click the quick-select chips below to help build your message, and try again!`;
+        setShowErrorChips(true);
+      }
+
       setMessages(prev => [
         ...prev,
-        { role: "assistant", content: "⚠️ Sorry, I ran into an error. Please specify a valid subject (MATH, SCIENCE, ENGLISH, EVS, HINDI, or SST) and try again!" }
+        { role: "assistant", content: replyContent }
       ]);
     } finally {
       setLoading(false);
@@ -139,6 +186,13 @@ export default function ChatAgent() {
 
   const selectSuggestion = (suggestion: string) => {
     handleSend(suggestion);
+  };
+
+  const handleChipClick = (value: string) => {
+    setInput(prev => {
+      const trimmed = prev.trim();
+      return trimmed ? `${trimmed} ${value}` : value;
+    });
   };
 
   return (
@@ -241,7 +295,7 @@ export default function ChatAgent() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#34d399", boxShadow: "0 0 8px #34d399" }} />
             <div>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>SheetMate AI Helper</h3>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>PracticeMitra AI Helper</h3>
               <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "1px" }}>Online &bull; Adaptive practice agent</p>
             </div>
           </div>
@@ -346,6 +400,87 @@ export default function ChatAgent() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Error Selectable Chips */}
+        {showErrorChips && (
+          <div style={{
+            padding: "12px 20px",
+            background: "rgba(255, 255, 255, 0.02)",
+            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px"
+          }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600, margin: 0 }}>
+              Quick Select Options (Click to add to input):
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: "55px" }}>Grades:</span>
+                {["LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8"].map(g => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => handleChipClick(g)}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "12px",
+                      padding: "2px 8px",
+                      fontSize: "0.7rem",
+                      color: "var(--accent-cyan)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: "55px" }}>Subjects:</span>
+                {["MATH", "SCIENCE", "ENGLISH", "EVS", "HINDI", "SST"].map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleChipClick(s)}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "12px",
+                      padding: "2px 8px",
+                      fontSize: "0.7rem",
+                      color: "var(--accent-cyan)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: "55px" }}>Formats:</span>
+                {["MIXED", "MCQ", "SHORT", "CRITICAL"].map(f => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => handleChipClick(f)}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "12px",
+                      padding: "2px 8px",
+                      fontSize: "0.7rem",
+                      color: "var(--accent-cyan)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input box */}
         <form 
           onSubmit={e => { e.preventDefault(); handleSend(); }}
@@ -378,6 +513,46 @@ export default function ChatAgent() {
           </button>
         </form>
       </div>
+
+      {showLimitModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 10000 }}>
+          <div className="glass-card spotlight-card" style={{ padding: "40px 32px", width: "100%", maxWidth: "480px", margin: "20px", textAlign: "center", border: "1px solid rgba(124, 58, 237, 0.3)", boxShadow: "0 0 40px rgba(124, 58, 237, 0.25)" }}>
+            <div style={{ fontSize: "3.5rem", marginBottom: "16px" }}>🚀</div>
+            <h3 className="gradient-text" style={{ fontSize: "1.6rem", margin: "0 0 12px 0", fontWeight: 800 }}>Generation Limit Reached</h3>
+            <p style={{ color: "var(--text-primary)", fontSize: "0.95rem", fontWeight: 600, margin: "0 0 16px 0", lineHeight: "1.5" }}>
+              {limitModalMsg || "You have reached your daily/monthly worksheet generation limit."}
+            </p>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", margin: "0 0 24px 0", lineHeight: "1.5" }}>
+              Upgrade to a premium subscription (Plus or Family/Pro) to get unlimited generations, weekly progress reports, parent control dashboards, and detailed scoring keys.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ padding: "14px", fontWeight: 700, borderRadius: "10px", fontSize: "0.9rem", background: "linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))" }}
+                onClick={() => {
+                  setShowLimitModal(false);
+                  router.push("/dashboard");
+                }}
+              >
+                Upgrade Plan &rarr;
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--border-glow)", background: "rgba(255,255,255,0.01)" }}
+                onClick={() => {
+                  setShowLimitModal(false);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

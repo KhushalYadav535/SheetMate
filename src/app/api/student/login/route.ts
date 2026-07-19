@@ -19,10 +19,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Student username not found." }, { status: 404 });
     }
 
+    // Check soft-delete status
+    if (profile.deletedAt) {
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      const isExpired = profile.deletedAt.getTime() < Date.now() - thirtyDaysMs;
+      
+      if (isExpired) {
+        return NextResponse.json({ error: "Student username not found." }, { status: 404 });
+      }
+    }
+
     // Secure comparison using bcryptjs
     const isPasswordCorrect = await bcrypt.compare(password || "", profile.password);
     if (!isPasswordCorrect) {
       return NextResponse.json({ error: "Incorrect password. Please try again." }, { status: 401 });
+    }
+
+    if (profile.deletedAt) {
+      return NextResponse.json({
+        status: "scheduled_deletion",
+        profileId: profile.id,
+        name: profile.name,
+        grade: profile.grade,
+        board: profile.board,
+        deletedAt: profile.deletedAt
+      });
     }
 
     return NextResponse.json({
@@ -30,7 +51,8 @@ export async function POST(req: NextRequest) {
       profileId: profile.id,
       name: profile.name,
       grade: profile.grade,
-      board: profile.board
+      board: profile.board,
+      profileType: profile.profileType || "student"
     });
 
   } catch (error) {

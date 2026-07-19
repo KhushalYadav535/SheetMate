@@ -100,12 +100,12 @@ export default function PreviewPaper({
         </div>
         <div style={{ marginBottom: "12px", borderBottom: "1px dashed #e2e8f0", paddingBottom: "6px" }}>
           <p style={{ fontWeight: 700, color: "#4f46e5", fontSize: "0.75rem", textTransform: "uppercase" }}>Section B: Short Answer Questions</p>
-          <p style={{ fontWeight: 600, color: "#1e293b" }}>Q6: Describe the core concept of {resolvedTopic}.</p>
+          <p style={{ fontWeight: 600, color: "#1e293b" }}>Q2: Describe the core concept of {resolvedTopic}.</p>
           <div style={{ height: "24px", borderBottom: "1px solid #cbd5e1", marginTop: "10px" }}></div>
         </div>
         <div>
           <p style={{ fontWeight: 700, color: "#4f46e5", fontSize: "0.75rem", textTransform: "uppercase" }}>Section C: Critical Application</p>
-          <p style={{ fontWeight: 600, color: "#1e293b" }}>Q9: Analytical word problem targeting {difficulty.toLowerCase()} difficulty.</p>
+          <p style={{ fontWeight: 600, color: "#1e293b" }}>Q3: Analytical word problem targeting {difficulty.toLowerCase()} difficulty.</p>
         </div>
       </div>
     );
@@ -145,7 +145,7 @@ export default function PreviewPaper({
             userSelect: "none"
           }}
         >
-          {studentName ? `${studentName}'s Sheet` : "SheetMate.in"}
+          {studentName ? `${studentName}'s Sheet` : "PracticeMitra.in"}
         </div>
 
         {/* Paper Header block */}
@@ -200,7 +200,7 @@ export default function PreviewPaper({
             color: "#64748b"
           }}
         >
-          <span>sheetmate.in</span>
+          <span>practicemitra.in</span>
           <span>Scan for Solutions [QR]</span>
         </div>
       </div>

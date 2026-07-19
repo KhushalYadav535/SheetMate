@@ -1,0 +1,23 @@
+[
+    [
+        {
+            "type": "table",
+            "content": {
+                "image_source": {
+                    "path": "images/18d68f19926c8e428bf02a301c309baa58e47900f14701cb745e94c986a12a66.jpg"
+                },
+                "table_caption": [],
+                "table_footnote": [],
+                "html": "",
+                "table_type": "simple_table",
+                "table_nest_level": 1
+            },
+            "bbox": [
+                67,
+                288,
+                739,
+                448
+            ]
+        }
+    ]
+]
