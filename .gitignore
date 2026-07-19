@@ -44,3 +44,11 @@ next-env.d.ts
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# Python
+venv/
+.venv/
+**/venv/
+**/.venv/
+
+__pycache__/
+*.pyc
