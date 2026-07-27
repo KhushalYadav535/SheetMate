@@ -26,7 +26,7 @@ except Exception as e:
     paddle_ocr_engine = None
     print(f"WARNING: PaddleOCR initialization failed: {e}")
 
-app = FastAPI(title="PracticeMitra OCR Microservice", version="1.0.0")
+app = FastAPI(title="PracUp OCR Microservice", version="1.0.0")
 
 # Allow CORS for all origins in development
 app.add_middleware(
@@ -437,7 +437,7 @@ def run_mineru_paddle_pipeline(img_bytes: bytes, file_name: str) -> tuple[str, f
         return run_paddle_ocr_fallback(img_bytes, file_name)
 
     mineru_image_path = preprocess_for_mineru_bytes(img_bytes, file_name)
-    temp_out_dir = tempfile.mkdtemp(prefix="practicemitra_mineru_out_")
+    temp_out_dir = tempfile.mkdtemp(prefix="pracup_mineru_out_")
     
     try:
         env = os.environ.copy()

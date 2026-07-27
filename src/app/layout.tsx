@@ -7,9 +7,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "PracticeMitra | AI-Powered School Worksheet Generator",
+  title: "PracUp | Practice Today, Level Up Tomorrow",
   description: "Generate customized practice worksheets aligned to LKG to Class 8 syllabus in seconds. Automatically target parent analytics and homework weaknesses.",
   keywords: [
+    "PracUp",
     "Worksheet generator",
     "AI school worksheets",
     "CBSE worksheets LKG to Class 8",
@@ -17,22 +18,22 @@ export const metadata: Metadata = {
     "personalized math practice sheets",
     "adaptive student learning dashboard",
   ],
-  authors: [{ name: "PracticeMitra Team" }],
-  metadataBase: new URL("https://practicemitra.in"),
+  authors: [{ name: "PracUp Team" }],
+  metadataBase: new URL("https://pracup.co.in"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "PracticeMitra | AI-Powered School Worksheet Generator",
+    title: "PracUp | Practice Today, Level Up Tomorrow",
     description: "Generate customized practice worksheets aligned to LKG to Class 8 syllabus in seconds. Target parent analytics and learning weaknesses automatically.",
-    url: "https://practicemitra.in",
-    siteName: "PracticeMitra",
+    url: "https://pracup.co.in",
+    siteName: "PracUp",
     images: [
       {
-        url: "/icon.png",
-        width: 512,
-        height: 512,
-        alt: "PracticeMitra AI school worksheet generator",
+        url: "/finallogo3.png",
+        width: 1200,
+        height: 630,
+        alt: "PracUp AI school worksheet generator",
       },
     ],
     locale: "en_IN",
@@ -40,9 +41,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "PracticeMitra | AI-Powered School Worksheet Generator",
+    title: "PracUp | Practice Today, Level Up Tomorrow",
     description: "Generate customized practice worksheets aligned to school board syllabus automatically.",
-    images: ["/icon.png"],
+    images: ["/finallogo3.png"],
   },
   robots: {
     index: true,
@@ -65,13 +66,13 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "PracticeMitra",
+    "name": "PracUp",
     "operatingSystem": "All",
     "applicationCategory": "EducationalApplication",
     "offers": {
       "@type": "Offer",
       "price": "0.00",
-      "priceCurrency": "USD",
+      "priceCurrency": "INR",
       "description": "Free demo workspace with premium features for parents and teachers",
     },
     "description": "AI-powered custom worksheet generator and student adaptive tracking dashboard for parents and teachers.",

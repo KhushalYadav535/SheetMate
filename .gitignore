@@ -49,6 +49,10 @@ venv/
 .venv/
 **/venv/
 **/.venv/
+**/site-packages/
 
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/

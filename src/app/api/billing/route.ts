@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, contact: contactInput, tier, autoRenew } = body;
+    const { action, contact: contactInput, tier, autoRenew, paymentId, orderId } = body;
 
     if (!contactInput || !contactInput.trim()) {
       return NextResponse.json({ error: "Missing contact parameter" }, { status: 400 });

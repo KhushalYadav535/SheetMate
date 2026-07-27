@@ -145,7 +145,7 @@ export default function PreviewPaper({
             userSelect: "none"
           }}
         >
-          {studentName ? `${studentName}'s Sheet` : "PracticeMitra.in"}
+          {studentName ? `${studentName}'s Sheet` : "PracUp.co.in"}
         </div>
 
         {/* Paper Header block */}
@@ -200,7 +200,7 @@ export default function PreviewPaper({
             color: "#64748b"
           }}
         >
-          <span>practicemitra.in</span>
+          <span>pracup.co.in</span>
           <span>Scan for Solutions [QR]</span>
         </div>
       </div>

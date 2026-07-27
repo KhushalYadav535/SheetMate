@@ -158,7 +158,7 @@ def scan_image(image_path):
     mineru_image_path = preprocess_for_mineru(image_path)
 
     # Create a unique temporary directory for MinerU output
-    temp_out_dir = tempfile.mkdtemp(prefix="practicemitra_mineru_out_")
+    temp_out_dir = tempfile.mkdtemp(prefix="pracup_mineru_out_")
 
     try:
         # Enforce HF_HUB_DISABLE_SYMLINKS=1 to prevent WinError 1314 symlink privilege crashes on Windows

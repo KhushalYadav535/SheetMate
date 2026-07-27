@@ -18,7 +18,7 @@ export default function ChatAgent() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hi! I am PracticeMitra AI. 📚 Tell me what worksheet you want to generate (e.g. 'Give me a Class 5 Math worksheet on Fractions, Easy difficulty')."
+      content: "Hi! I am PracUp AI. 📚 Tell me what worksheet you want to generate (e.g. 'Give me a Class 5 Math worksheet on Fractions, Easy difficulty')."
     }
   ]);
   const [input, setInput] = useState("");
@@ -29,7 +29,7 @@ export default function ChatAgent() {
 
   // Sync profile details on load
   useEffect(() => {
-    const savedId = localStorage.getItem("practicemitra_profile_id");
+    const savedId = localStorage.getItem("pracup_profile_id");
     if (savedId) {
       setStudentProfileId(savedId);
       fetch(`/api/student/dashboard?id=${savedId}`)
@@ -125,7 +125,7 @@ export default function ChatAgent() {
         
         if (!studentProfileId) {
           try {
-            const guestHistoryStr = sessionStorage.getItem("practicemitra_guest_history");
+            const guestHistoryStr = sessionStorage.getItem("pracup_guest_history");
             const history = guestHistoryStr ? JSON.parse(guestHistoryStr) : [];
             const newRecord = {
               id: genData.worksheetId,
@@ -138,7 +138,7 @@ export default function ChatAgent() {
             };
             if (!history.some((item: any) => item.id === genData.worksheetId)) {
               const updated = [newRecord, ...history].slice(0, 5); // limit to last 5
-              sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(updated));
+              sessionStorage.setItem("pracup_guest_history", JSON.stringify(updated));
             }
           } catch (e) {
             console.error("Error writing chatbot guest history:", e);
@@ -295,7 +295,7 @@ Feel free to click the quick-select chips below to help build your message, and 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#34d399", boxShadow: "0 0 8px #34d399" }} />
             <div>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>PracticeMitra AI Helper</h3>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>PracUp AI Helper</h3>
               <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "1px" }}>Online &bull; Adaptive practice agent</p>
             </div>
           </div>

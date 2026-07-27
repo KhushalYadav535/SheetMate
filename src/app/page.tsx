@@ -471,7 +471,7 @@ export default function HomePage() {
 
   // Sync profile ID on load
   useEffect(() => {
-    const history = sessionStorage.getItem("practicemitra_guest_history");
+    const history = sessionStorage.getItem("pracup_guest_history");
     if (history) {
       try {
         setGuestHistory(JSON.parse(history));
@@ -479,7 +479,7 @@ export default function HomePage() {
         console.error("Error parsing guest history:", e);
       }
     }
-    const savedId = localStorage.getItem("practicemitra_profile_id");
+    const savedId = localStorage.getItem("pracup_profile_id");
     if (savedId) {
       setStudentProfileId(savedId);
       fetch(`/api/student/dashboard?id=${savedId}`)
@@ -534,10 +534,10 @@ export default function HomePage() {
 
   // Check for logout flag in localStorage on load
   useEffect(() => {
-    const showToast = localStorage.getItem("practicemitra_show_logout_toast");
+    const showToast = localStorage.getItem("pracup_show_logout_toast");
     if (showToast === "true") {
       setShowLogoutToast(true);
-      localStorage.removeItem("practicemitra_show_logout_toast");
+      localStorage.removeItem("pracup_show_logout_toast");
       // Auto-hide after 6 seconds
       const timer = setTimeout(() => {
         setShowLogoutToast(false);
@@ -913,7 +913,7 @@ export default function HomePage() {
   }, [studentProfileId]);
 
   const handleLogOut = () => {
-    localStorage.removeItem("practicemitra_profile_id");
+    localStorage.removeItem("pracup_profile_id");
     setStudentProfileId(null);
     setStudentProfile(null);
     setStudentStats(null);
@@ -939,7 +939,7 @@ export default function HomePage() {
 
   const handleGenerationSuccess = (worksheetId: string) => {
     if (!studentProfileId) {
-      const historyStr = sessionStorage.getItem("practicemitra_guest_history");
+      const historyStr = sessionStorage.getItem("pracup_guest_history");
       const history = historyStr ? JSON.parse(historyStr) : [];
       const newRecord = {
         id: worksheetId,
@@ -952,7 +952,7 @@ export default function HomePage() {
       };
       if (!history.some((item: any) => item.id === worksheetId)) {
         const updated = [newRecord, ...history].slice(0, 5); // limit to last 5
-        sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(updated));
+        sessionStorage.setItem("pracup_guest_history", JSON.stringify(updated));
         setGuestHistory(updated);
       }
     }
@@ -1025,10 +1025,9 @@ export default function HomePage() {
       {/* Tubelight Floating Glassmorphic Navbar */}
       <nav className={`tubelight-nav ${scrolled ? "scrolled" : ""} ${mobileMenuOpen ? "open" : ""}`}>
         <div className="tubelight-brand" onClick={() => router.push("/")}>
-          <div className="tubelight-brand-logo" />
-          <span className="tubelight-brand-text">
-            Practice<span style={{ color: "var(--accent-purple)" }}>Mitra</span>
-          </span>
+          <div className="brand-logo-badge">
+            <img src="/finallogo3.png" alt="PracUp Logo" className="brand-logo-horizontal" style={{ height: "40px", objectFit: "contain" }} />
+          </div>
         </div>
         
         <div className="tubelight-links-group">
@@ -1338,7 +1337,7 @@ export default function HomePage() {
             Generate Customized Worksheet
           </h2>
           <p className="hero-practice-desc" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
-            Select your syllabus details below. PracticeMitra AI will construct a targeted practice sheet instantly.
+            Select your syllabus details below. PracUp AI will construct a targeted practice sheet instantly.
           </p>
         </div>
 
@@ -1448,7 +1447,7 @@ export default function HomePage() {
           >
             <div style={{ flex: 1, minWidth: "260px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                <strong style={{ fontSize: "1.05rem", color: "var(--text-primary)" }}>PracticeMitra Booster Credit Pack</strong>
+                <strong style={{ fontSize: "1.05rem", color: "var(--text-primary)" }}>PracUp Booster Credit Pack</strong>
                 <span style={{ fontSize: "0.68rem", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", padding: "2px 8px", borderRadius: "10px", fontWeight: 700, textTransform: "uppercase" }}>Limit Hit</span>
               </div>
               <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.4" }}>
@@ -1527,7 +1526,7 @@ export default function HomePage() {
             How it works
           </span>
           <h2 className="gradient-text" style={{ fontSize: "2.1rem", marginTop: "12px", marginBottom: "12px" }}>
-            The PracticeMitra Personalization Loop
+            The PracUp Personalization Loop
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto" }}>
             Three core steps that build a tailored conceptual learning path for your child.
@@ -1545,7 +1544,7 @@ export default function HomePage() {
               </div>
               <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Adaptive Learning Engine</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                PracticeMitra tracks child practice errors and builds a custom syllabus focus map, targeting weak topics in subsequent sheet generations.
+                PracUp tracks child practice errors and builds a custom syllabus focus map, targeting weak topics in subsequent sheet generations.
               </p>
             </div>
             <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1564,7 +1563,7 @@ export default function HomePage() {
               </div>
               <h3 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Instant PDF Scanner</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                Upload solved worksheet photos or PDFs. PracticeMitra extracts written answers and grades the full sheet instantly.
+                Upload solved worksheet photos or PDFs. PracUp extracts written answers and grades the full sheet instantly.
               </p>
             </div>
             <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1779,7 +1778,7 @@ export default function HomePage() {
                 Most Popular
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#a78bfa", margin: "0 0 8px 0" }}>PracticeMitra Plus</h3>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#a78bfa", margin: "0 0 8px 0" }}>PracUp Plus</h3>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Ideal for regular structured practice and conceptual reviews.</p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
@@ -1829,7 +1828,7 @@ export default function HomePage() {
               }}
             >
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>PracticeMitra Family</h3>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>PracUp Family</h3>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Designed for multiple children and intensive analytics reporting.</p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", marginBottom: "24px" }}>
@@ -1884,23 +1883,23 @@ export default function HomePage() {
         <div className="faq-container">
           {[
             {
-              q: "What is PracticeMitra and who is it for?",
-              a: "PracticeMitra is an AI-powered worksheet generator specifically aligned with the Indian NCERT (CBSE) syllabus for LKG, UKG, and Classes 1 to 8. It's designed for parents and teachers who want to generate personalized, curriculum-accurate math, science, and English practice papers."
+              q: "What is PracUp and who is it for?",
+              a: "PracUp is an AI-powered worksheet generator specifically aligned with the Indian NCERT (CBSE) syllabus for LKG, UKG, and Classes 1 to 8. It's designed for parents and teachers who want to generate personalized, curriculum-accurate math, science, and English practice papers."
             },
             {
               q: "How does the AI personalize worksheets for my child?",
-              a: "When you create a student profile, PracticeMitra automatically tracks your child's scoring trends and concept errors. For every new worksheet generated, the system intelligently adapts up to 60% of the questions to target their specific conceptual weaknesses, reinforcing learning where they need it most."
+              a: "When you create a student profile, PracUp automatically tracks your child's scoring trends and concept errors. For every new worksheet generated, the system intelligently adapts up to 60% of the questions to target their specific conceptual weaknesses, reinforcing learning where they need it most."
             },
             {
-              q: "Is it really free during the Beta phase?",
-              a: "Yes! PracticeMitra is completely free to use during our Beta period. You can create a profile, generate unlimited worksheets, access dashboard insights, and grade student papers online without any subscription fees or limits."
+              q: "How does plan activation work?",
+              a: "You can try out PracUp as a guest or create a Student/Parent profile to pick a plan (Registered Free, Plus, or Family/Pro). Secure payments are processed via Razorpay with instant subscription activation."
             },
             {
               q: "How does the interactive grading work?",
               a: "No offline answer key scanning needed! You can open a student's generated worksheet on any device (phone, tablet, or PC) and click correct/incorrect directly on the digital checklist. The student's stats, weaknesses list, and history update immediately."
             },
             {
-              q: "Can I use PracticeMitra as a guest without signing up?",
+              q: "Can I use PracUp as a guest without signing up?",
               a: "Absolutely. You can try our generator as a guest right from the landing page. However, guest generation is limited to 4 worksheets per day, and your child's progress, adaptive learning features, and dashboard stats will not be saved."
             }
           ].map((item, index) => {
@@ -1962,7 +1961,7 @@ export default function HomePage() {
                   marginBottom: "24px"
                 }}
               >
-                🎓 Free during Beta
+                🎓 Choice of Free & Premium Plans
               </span>
               <h2
                 style={{
@@ -1978,7 +1977,7 @@ export default function HomePage() {
                 Start learning smarter today.
               </h2>
               <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "520px", margin: "0 auto 36px auto", lineHeight: 1.65 }}>
-                Join thousands of students using PracticeMitra to practice, track, and master their school curriculum.
+                Join thousands of students using PracUp to practice, track, and master their school curriculum.
               </p>
               <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
                 <div className="border-beam-wrapper magnetic-btn" style={{ borderRadius: "10px" }}>
@@ -2142,7 +2141,7 @@ export default function HomePage() {
           margin: "0 auto"
         }}
       >
-        <p>&copy; {new Date().getFullYear()} PracticeMitra (practicemitra.in). All rights reserved. English-medium MVP v1.0.0.</p>
+        <p>&copy; {new Date().getFullYear()} PracUp (pracup.co.in). All rights reserved. English-medium MVP v1.0.0.</p>
       </footer>
     </main>
   );

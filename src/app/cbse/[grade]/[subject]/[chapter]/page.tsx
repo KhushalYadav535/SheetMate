@@ -194,7 +194,7 @@ Return JSON in this schema:
 
             {/* Print trigger notice */}
             <div style={{ marginTop: "30px", borderTop: "1.5px solid #cbd5e1", paddingTop: "12px", textAlign: "center", fontSize: "0.8rem", color: "#475569" }}>
-              <span>Generated on practicemitra.in &bull; Save or print directly to download</span>
+              <span>Generated on pracup.co.in &bull; Save or print directly to download</span>
             </div>
           </div>
         ) : (

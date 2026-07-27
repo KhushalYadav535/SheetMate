@@ -75,6 +75,20 @@ export default function DashboardPage() {
     router.push(`/worksheets/${worksheetId}`);
   };
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== "undefined" && (window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   // Animated KPI statistics count-ups
   const [animatedWorksheetsCount, setAnimatedWorksheetsCount] = useState(0);
   const [animatedGradingRate, setAnimatedGradingRate] = useState(0);
@@ -180,7 +194,7 @@ export default function DashboardPage() {
     const msgs = [
       "Uploading solved PDF/Image sheet...",
       "Extracting text solutions using local OCR...",
-      "Sending content to PracticeMitra AI reviewer...",
+      "Sending content to PracUp AI reviewer...",
       "Comparing responses to correct answers...",
       "Calculating final score & subtopic logs..."
     ];
@@ -277,14 +291,14 @@ export default function DashboardPage() {
       setRegTier(tierParam as any);
     }
 
-    const savedId = localStorage.getItem("practicemitra_profile_id");
+    const savedId = localStorage.getItem("pracup_profile_id");
     if (savedId) {
       setProfileId(savedId);
     } else {
       setLoading(false);
     }
 
-    const savedParentPhone = localStorage.getItem("practicemitra_parent_phone");
+    const savedParentPhone = localStorage.getItem("pracup_parent_phone");
     if (savedParentPhone) {
       setParentUnlocked(true);
       setSignInTab("parent");
@@ -335,7 +349,7 @@ export default function DashboardPage() {
   // Load parent profiles when parent mode is unlocked and parent tab is active
   useEffect(() => {
     if (parentUnlocked && signInTab === "parent" && existingProfiles.length === 0) {
-      const savedParentPhone = localStorage.getItem("practicemitra_parent_phone");
+      const savedParentPhone = localStorage.getItem("pracup_parent_phone");
       const phoneToUse = parentPhoneInput.trim() || savedParentPhone;
       
       if (phoneToUse && phoneToUse !== "unlocked-by-parent-login") {
@@ -569,6 +583,102 @@ export default function DashboardPage() {
       finalSecurityAnswer = regSecurityAnswer.trim();
     }
 
+    let paymentId: string | null = null;
+    let razorpayOrderId: string | null = null;
+
+    // Trigger Razorpay Payment Checkout for paid tiers (Plus or Family/Pro)
+    if (regTier !== "FREE") {
+      try {
+        const amountINR = regTier === "PLUS" 
+          ? (systemConfig?.tiers?.plus?.monthlyPriceINR || 199) 
+          : (systemConfig?.tiers?.familyPro?.monthlyPriceINR || 349);
+
+        const orderRes = await fetch("/api/razorpay/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amountINR,
+            planType: "subscription",
+            tier: regTier,
+            parentContact: finalParentPhone || finalParentEmail || regUsername.trim()
+          })
+        }).then(r => r.json());
+
+        if (orderRes.error) {
+          throw new Error(orderRes.error);
+        }
+
+        razorpayOrderId = orderRes.orderId;
+
+        if (orderRes.isSimulation) {
+          const confirmed = confirm(
+            `💳 [Razorpay Payment Gateway Test Mode]\n\n` +
+            `Plan: ${regTier === "PLUS" ? "PracUp Plus Membership" : "PracUp Family / Pro Membership"}\n` +
+            `Amount: ₹${amountINR}\n` +
+            `Order ID: ${orderRes.orderId}\n\n` +
+            `Click OK to authorize simulated Razorpay payment and activate your subscription!`
+          );
+          if (!confirmed) {
+            setSubmittingReg(false);
+            return;
+          }
+          paymentId = `pay_simulated_${Date.now()}`;
+        } else {
+          const loaded = await loadRazorpayScript();
+          if (!loaded) {
+            throw new Error("Razorpay SDK failed to load. Please check your internet connection.");
+          }
+
+          await new Promise<void>((resolve, reject) => {
+            const options = {
+              key: orderRes.keyId,
+              amount: orderRes.amount,
+              currency: orderRes.currency,
+              name: "PracUp",
+              description: `${regTier === "PLUS" ? "PracUp Plus" : "PracUp Family / Pro"} Subscription`,
+              order_id: orderRes.orderId,
+              prefill: {
+                name: regName,
+                email: finalParentEmail || "",
+                contact: finalParentPhone || ""
+              },
+              theme: { color: "#7c3aed" },
+              handler: function (response: any) {
+                paymentId = response.razorpay_payment_id;
+                resolve();
+              },
+              modal: {
+                ondismiss: function () {
+                  reject(new Error("Razorpay payment cancelled by user."));
+                }
+              }
+            };
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+          });
+        }
+
+        // Log transaction record to billing endpoint
+        await fetch("/api/billing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "SUBSCRIBE",
+            tier: regTier,
+            amount: amountINR,
+            contact: finalParentPhone || finalParentEmail || regUsername.trim(),
+            paymentId,
+            orderId: razorpayOrderId
+          })
+        }).catch(err => console.warn("Billing log failed:", err));
+
+      } catch (payErr) {
+        setSubmittingReg(false);
+        setError((payErr as Error).message || "Payment processing failed or was cancelled.");
+        return;
+      }
+    }
+
     try {
       const res = await fetch("/api/student/profile", {
         method: "POST",
@@ -597,12 +707,12 @@ export default function DashboardPage() {
 
       if (data.profileType === "parent") {
         setParentUnlocked(true);
-        localStorage.setItem("practicemitra_parent_phone", "unlocked-by-parent-login");
+        localStorage.setItem("pracup_parent_phone", "unlocked-by-parent-login");
       } else {
-        localStorage.removeItem("practicemitra_parent_phone");
+        localStorage.removeItem("pracup_parent_phone");
         setParentUnlocked(false);
       }
-      localStorage.setItem("practicemitra_profile_id", data.profileId);
+      localStorage.setItem("pracup_profile_id", data.profileId);
       setProfileId(data.profileId);
 
     } catch (err) {
@@ -619,7 +729,7 @@ export default function DashboardPage() {
   };
 
   const selectProfile = (pId: string) => {
-    localStorage.setItem("practicemitra_profile_id", pId);
+    localStorage.setItem("pracup_profile_id", pId);
     setProfileId(pId);
   };
 
@@ -670,12 +780,12 @@ export default function DashboardPage() {
 
       if (data.profileType === "parent") {
         setParentUnlocked(true);
-        localStorage.setItem("practicemitra_parent_phone", "unlocked-by-parent-login");
+        localStorage.setItem("pracup_parent_phone", "unlocked-by-parent-login");
       } else {
-        localStorage.removeItem("practicemitra_parent_phone");
+        localStorage.removeItem("pracup_parent_phone");
         setParentUnlocked(false);
       }
-      localStorage.setItem("practicemitra_profile_id", data.profileId);
+      localStorage.setItem("pracup_profile_id", data.profileId);
       setProfileId(data.profileId);
       setStudentUsernameInput("");
       setStudentPasswordInput("");
@@ -728,7 +838,7 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      localStorage.setItem("practicemitra_parent_phone", parentPhoneInput.trim());
+      localStorage.setItem("pracup_parent_phone", parentPhoneInput.trim());
       setParentUnlocked(true);
       setHasSearchedProfiles(true);
       
@@ -1231,14 +1341,14 @@ export default function DashboardPage() {
 
   const handleProfileReset = () => {
     if (confirm("Are you sure you want to switch student profiles?")) {
-      localStorage.removeItem("practicemitra_profile_id");
+      localStorage.removeItem("pracup_profile_id");
       setProfileId(null);
       setProfile(null);
       setWorksheets([]);
       setWeaknesses([]);
       setSubjectFilter("ALL");
       
-      const savedParentPhone = localStorage.getItem("practicemitra_parent_phone");
+      const savedParentPhone = localStorage.getItem("pracup_parent_phone");
       if (savedParentPhone) {
         setParentUnlocked(true);
         setSignInTab("parent");
@@ -1272,9 +1382,9 @@ export default function DashboardPage() {
   };
 
   const handleLogOut = () => {
-    localStorage.removeItem("practicemitra_profile_id");
-    localStorage.removeItem("practicemitra_parent_phone");
-    localStorage.setItem("practicemitra_show_logout_toast", "true");
+    localStorage.removeItem("pracup_profile_id");
+    localStorage.removeItem("pracup_parent_phone");
+    localStorage.setItem("pracup_show_logout_toast", "true");
     setProfileId(null);
     setProfile(null);
     setWorksheets([]);
@@ -1492,9 +1602,9 @@ export default function DashboardPage() {
       alert("Profile and all associated data deleted successfully.");
 
       // Success! Clear local storage credentials and session state
-      localStorage.removeItem("practicemitra_profile_id");
-      localStorage.removeItem("practicemitra_parent_phone");
-      localStorage.setItem("practicemitra_show_delete_toast", "true");
+      localStorage.removeItem("pracup_profile_id");
+      localStorage.removeItem("pracup_parent_phone");
+      localStorage.setItem("pracup_show_delete_toast", "true");
 
       // Reset local states
       setProfileId(null);
@@ -1960,10 +2070,9 @@ export default function DashboardPage() {
         {/* Floating Tubelight Navbar for Auth */}
         <nav className={`tubelight-nav ${mobileMenuOpen ? "open" : ""}`}>
           <div className="tubelight-brand" onClick={() => router.push("/")}>
-            <div className="tubelight-brand-logo" />
-            <span className="tubelight-brand-text">
-              Practice<span style={{ color: "var(--accent-purple)" }}>Mitra</span>
-            </span>
+            <div className="brand-logo-badge">
+              <img src="/finallogo3.png" alt="PracUp Logo" className="brand-logo-horizontal" style={{ height: "40px", objectFit: "contain" }} />
+            </div>
           </div>
           
           <div className="tubelight-actions">
@@ -2249,12 +2358,12 @@ export default function DashboardPage() {
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                           <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                            Connected profiles for parent <strong>{parentPhoneInput || localStorage.getItem("practicemitra_parent_phone")}</strong>
+                            Connected profiles for parent <strong>{parentPhoneInput || localStorage.getItem("pracup_parent_phone")}</strong>
                           </span>
                           <button
                             type="button"
                             onClick={() => {
-                              localStorage.removeItem("practicemitra_parent_phone");
+                              localStorage.removeItem("pracup_parent_phone");
                               setParentUnlocked(false);
                               setExistingProfiles([]);
                               setOtpSent(false);
@@ -2336,7 +2445,7 @@ export default function DashboardPage() {
                                               if (res.ok) {
                                                 alert(`${p.name}'s profile has been successfully restored!`);
                                                 // Refresh profiles
-                                                const phone = parentPhoneInput || localStorage.getItem("practicemitra_parent_phone") || "";
+                                                const phone = parentPhoneInput || localStorage.getItem("pracup_parent_phone") || "";
                                                 const freshRes = await fetch(`/api/student/profiles?contact=${encodeURIComponent(phone)}`);
                                                 if (freshRes.ok) {
                                                   const freshData = await freshRes.json();
@@ -2379,9 +2488,9 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
                   <div
                     onClick={() => {
-                      localStorage.removeItem("practicemitra_profile_id");
-                      localStorage.removeItem("practicemitra_parent_phone");
-                      localStorage.setItem("practicemitra_show_logout_toast", "true");
+                      localStorage.removeItem("pracup_profile_id");
+                      localStorage.removeItem("pracup_parent_phone");
+                      localStorage.setItem("pracup_show_logout_toast", "true");
                       router.push("/");
                     }}
                     style={{
@@ -2853,60 +2962,46 @@ export default function DashboardPage() {
                     // PAYMENT STEP
                     <form onSubmit={handleRegister}>
                       <h3 style={{ fontSize: "1.2rem", color: "var(--accent-cyan)", marginBottom: "6px", fontFamily: "var(--font-heading)" }}>
-                        {regTier === "PLUS" ? "Plus Plan Activation" : "Family / Pro Plan Activation"}
+                        {regTier === "PLUS" ? "Plus Plan Subscription" : "Family / Pro Plan Subscription"}
                       </h3>
                       <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", marginBottom: "18px" }}>
                         {regTier === "PLUS" 
-                          ? "Activate your student profile subscription to unlock unlimited generation." 
-                          : "Activate your family subscription to unlock 5 student profiles and weakness heatmaps."}
+                          ? "Activate your student profile subscription via Razorpay to unlock unlimited generation." 
+                          : "Activate your family subscription via Razorpay to unlock 5 student profiles and weakness heatmaps."}
                       </p>
 
-                      {/* Beta Prom Flag Banner */}
+                      {/* Razorpay Gateway Banner */}
                       <div style={{
-                        background: "rgba(6, 182, 212, 0.08)",
-                        border: "1px solid rgba(6, 182, 212, 0.3)",
-                        borderRadius: "8px",
-                        padding: "12px 14px",
-                        marginBottom: "20px",
-                        fontSize: "0.8rem",
-                        color: "var(--accent-cyan)",
-                        lineHeight: 1.4
-                      }}>
-                        🎉 <strong>Beta Promotion Active:</strong> {regTier === "PLUS" ? "PracticeMitra Plus" : "PracticeMitra Family"} is 100% FREE during the public beta phase.
-                      </div>
-
-                      {/* Payment Integration Info Banner */}
-                      <div style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(79, 70, 229, 0.08) 100%)",
+                        border: "1px solid rgba(124, 58, 237, 0.3)",
+                        borderRadius: "10px",
                         padding: "16px",
                         marginBottom: "20px",
                         fontSize: "0.85rem",
-                        color: "var(--text-secondary)",
+                        color: "var(--text-primary)",
                         lineHeight: 1.5
                       }}>
-                        <p style={{ marginBottom: "8px", color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span>💳</span> Integrated Payment Gateway
+                        <p style={{ marginBottom: "8px", color: "#a78bfa", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span>💳</span> Razorpay Payment Gateway
                         </p>
-                        <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "8px" }}>
-                          RuPay, UPI, Cards, and NetBanking payment systems will be active in the final production release.
+                        <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
+                          Supports UPI (Google Pay, PhonePe, Paytm, BHIM), RuPay, Visa, MasterCard, NetBanking, & Mobile Wallets.
                         </p>
-                        <p style={{ fontSize: "0.8rem", color: "#34d399", fontWeight: 600 }}>
-                          ✓ Current beta activation requires no card entries or payments.
+                        <p style={{ fontSize: "0.78rem", color: "#34d399", fontWeight: 600, margin: 0 }}>
+                          🔒 256-Bit SSL Encrypted & PCI-DSS Compliant Secure Payment
                         </p>
                       </div>
 
-                      {/* Pricing Table */}
+                      {/* Pricing Summary */}
                       <div style={{
                         background: "rgba(255,255,255,0.02)",
                         border: "1px solid var(--border-glow)",
                         borderRadius: "8px",
-                        padding: "12px 14px",
-                        fontSize: "0.8rem",
+                        padding: "14px 16px",
+                        fontSize: "0.85rem",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "6px",
+                        gap: "8px",
                         marginBottom: "24px"
                       }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -2918,14 +3013,14 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--text-secondary)" }}>Beta Discount (-100%)</span>
-                          <span style={{ color: "#34d399", fontWeight: 600 }}>
-                            -₹{regTier === "PLUS" ? (systemConfig?.tiers?.plus?.monthlyPriceINR || 199) : (systemConfig?.tiers?.familyPro?.monthlyPriceINR || 349)}/mo
-                          </span>
+                          <span style={{ color: "var(--text-secondary)" }}>Taxes & Processing Fee</span>
+                          <span style={{ color: "#34d399", fontWeight: 600 }}>Included</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "6px", marginTop: "4px", fontWeight: 700 }}>
-                          <span style={{ color: "var(--text-primary)" }}>Total Due Now</span>
-                          <span style={{ color: "var(--accent-cyan)" }}>₹0</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "8px", marginTop: "4px", fontWeight: 700, fontSize: "0.95rem" }}>
+                          <span style={{ color: "var(--text-primary)" }}>Total Payable Now</span>
+                          <span style={{ color: "var(--accent-cyan)" }}>
+                            ₹{regTier === "PLUS" ? (systemConfig?.tiers?.plus?.monthlyPriceINR || 199) : (systemConfig?.tiers?.familyPro?.monthlyPriceINR || 349)}
+                          </span>
                         </div>
                       </div>
 
@@ -2948,10 +3043,12 @@ export default function DashboardPage() {
                         <button
                           type="submit"
                           className="btn-primary"
-                          style={{ flex: 2 }}
+                          style={{ flex: 2, background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
                           disabled={submittingReg}
                         >
-                          {submittingReg ? "Activating Beta..." : `Activate ${regTier === "PLUS" ? "Plus" : "Family"} Beta`}
+                          {submittingReg 
+                            ? "Connecting to Razorpay..." 
+                            : `Pay ₹${regTier === "PLUS" ? (systemConfig?.tiers?.plus?.monthlyPriceINR || 199) : (systemConfig?.tiers?.familyPro?.monthlyPriceINR || 349)} & Activate 💳`}
                         </button>
                       </div>
                     </form>
@@ -3060,10 +3157,9 @@ export default function DashboardPage() {
       {/* Floating Tubelight Navbar */}
       <nav className={`tubelight-nav ${mobileMenuOpen ? "open" : ""}`}>
         <div className="tubelight-brand" onClick={() => router.push("/")}>
-          <div className="tubelight-brand-logo" />
-          <span className="tubelight-brand-text">
-            Practice<span style={{ color: "var(--accent-purple)" }}>Mitra</span>
-          </span>
+          <div className="brand-logo-badge">
+            <img src="/finallogo3.png" alt="PracUp Logo" className="brand-logo-horizontal" style={{ height: "40px", objectFit: "contain" }} />
+          </div>
         </div>
         
         <div className="tubelight-links-group">
@@ -4859,19 +4955,19 @@ export default function DashboardPage() {
                         {/* Personalized Churn Reduction Guide Banner */}
                         {deleteReason === "complicated" && (
                           <div style={{ background: "rgba(167, 139, 250, 0.05)", border: "1px solid rgba(167, 139, 250, 0.15)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                            💡 <strong>Did you know?</strong> We designed PracticeMitra to be simple! You can click the floating <strong>AI Helper Chatbot</strong> in the bottom right corner of your dashboard and just type: <em>"Give me Class 5 Math Fractions, Easy difficulty"</em> to get sheets instantly without any menus.
+                            💡 <strong>Did you know?</strong> We designed PracUp to be simple! You can click the floating <strong>AI Helper Chatbot</strong> in the bottom right corner of your dashboard and just type: <em>"Give me Class 5 Math Fractions, Easy difficulty"</em> to get sheets instantly without any menus.
                           </div>
                         )}
 
                         {deleteReason === "completed" && (
                           <div style={{ background: "rgba(6, 182, 212, 0.05)", border: "1px solid rgba(6, 182, 212, 0.15)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                            💡 <strong>Did you know?</strong> PracticeMitra dynamically generates brand new, unique questions every single time, even for the same topic! Try changing the difficulty level (Medium/Hard) or creating a <strong>Mixed</strong> format sheet to challenge your child further.
+                            💡 <strong>Did you know?</strong> PracUp dynamically generates brand new, unique questions every single time, even for the same topic! Try changing the difficulty level (Medium/Hard) or creating a <strong>Mixed</strong> format sheet to challenge your child further.
                           </div>
                         )}
 
                         {deleteReason === "missing_content" && (
                           <div style={{ background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.15)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                            🚀 <strong>Coming Soon!</strong> We are actively adding new topics and extra-curricular subjects. If there is a specific chapter or topic you need right now, email us at <a href="mailto:request@practicemitra.in" style={{ color: "var(--accent-cyan)", textDecoration: "underline" }}>request@practicemitra.in</a> and we will add it for you in the next update!
+                            🚀 <strong>Coming Soon!</strong> We are actively adding new topics and extra-curricular subjects. If there is a specific chapter or topic you need right now, email us at <a href="mailto:request@pracup.co.in" style={{ color: "var(--accent-cyan)", textDecoration: "underline" }}>request@pracup.co.in</a> and we will add it for you in the next update!
                           </div>
                         )}
 
@@ -4901,7 +4997,7 @@ export default function DashboardPage() {
                               />
                             </div>
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                              💡 We appreciate your feedback! If there is any specific feature we can build to make you stay, please email us at <a href="mailto:feedback@practicemitra.in" style={{ color: "var(--accent-cyan)", textDecoration: "underline" }}>feedback@practicemitra.in</a>.
+                              💡 We appreciate your feedback! If there is any specific feature we can build to make you stay, please email us at <a href="mailto:feedback@pracup.co.in" style={{ color: "var(--accent-cyan)", textDecoration: "underline" }}>feedback@pracup.co.in</a>.
                             </div>
                           </div>
                         )}
@@ -4993,8 +5089,8 @@ export default function DashboardPage() {
                         <h4 style={{ margin: "0 0 10px 0", fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>Active Plan</h4>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
                           <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "#a78bfa" }}>
-                            {billingInfo.subscription?.tier === "PLUS" ? "PracticeMitra Plus" :
-                             billingInfo.subscription?.tier === "FAMILY_PRO" ? "PracticeMitra Family" : "PracticeMitra Free"}
+                            {billingInfo.subscription?.tier === "PLUS" ? "PracUp Plus" :
+                             billingInfo.subscription?.tier === "FAMILY_PRO" ? "PracUp Family" : "PracUp Free"}
                           </span>
                           <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
                             {billingInfo.subscription?.endsAt ? `Renewing at ₹${billingInfo.subscription.billingPriceINR}` : "Free tier limits"}
@@ -5304,7 +5400,7 @@ export default function DashboardPage() {
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(15, 23, 42, 0.7)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 200 }}>
           <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "40px", width: "100%", maxWidth: "500px", margin: "20px", textAlign: "center", border: "1px solid rgba(124, 58, 237, 0.3)", boxShadow: "0 0 30px rgba(124, 58, 237, 0.25)" }}>
             <div style={{ fontSize: "3.5rem", marginBottom: "16px" }}>🚀</div>
-            <h3 className="gradient-text" style={{ fontSize: "1.6rem", margin: "0 0 12px 0", fontWeight: 800 }}>PracticeMitra Premium Upgrade</h3>
+            <h3 className="gradient-text" style={{ fontSize: "1.6rem", margin: "0 0 12px 0", fontWeight: 800 }}>PracUp Premium Upgrade</h3>
             <p style={{ color: "var(--text-primary)", fontSize: "0.95rem", fontWeight: 600, margin: "0 0 16px 0", lineHeight: "1.5" }}>
               Amazing work practicing! You have hit your free monthly evaluation limits in consecutive months.
             </p>
@@ -5368,7 +5464,7 @@ export default function DashboardPage() {
             </div>
             
             <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
-              PracticeMitra ensures we never block a child's practice. Basic scoring remains active.
+              PracUp ensures we never block a child's practice. Basic scoring remains active.
             </p>
           </div>
         </div>

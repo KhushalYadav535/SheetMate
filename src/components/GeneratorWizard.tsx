@@ -75,7 +75,7 @@ export default function GeneratorWizard({
 
   // Auto-prefill grade and jump to step 2 if a student profile is active
   useEffect(() => {
-    const savedId = localStorage.getItem("practicemitra_profile_id");
+    const savedId = localStorage.getItem("pracup_profile_id");
     if (!savedId) {
       setStep(1);
       setLoadingProfile(false);

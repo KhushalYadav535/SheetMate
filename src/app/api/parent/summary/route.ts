@@ -21,18 +21,24 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+    const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
+    const smtpUser = process.env.SMTP_USER || process.env.NODEMAILER_EMAIL;
+    const smtpPass = process.env.SMTP_PASS || process.env.NODEMAILER_PASSWORD;
+    const smtpFrom = process.env.SMTP_FROM || (smtpUser ? `"PracUp Admin" <${smtpUser}>` : `"PracUp Admin" <no-reply@pracup.co.in>`);
+
+    const smtpConfigured = !!(smtpUser && smtpPass && !smtpUser.includes("your-email") && !smtpUser.includes("your-"));
     const reportsSent: any[] = [];
 
     let transporter: any = null;
     if (smtpConfigured) {
       transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_PORT === "465",
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: smtpUser,
+          pass: smtpPass,
         },
       });
     }
@@ -120,7 +126,7 @@ export async function GET(req: NextRequest) {
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); overflow: hidden; border: 1px solid #e2e8f0;">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #7c3aed, #4f46e5); padding: 32px 24px; text-align: center; color: #ffffff;">
-              <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em;">PracticeMitra</h1>
+              <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em;">PracUp</h1>
               <p style="margin: 4px 0 0 0; font-size: 0.95rem; opacity: 0.9;">Weekly Parent & Student Performance Summary</p>
             </div>
             
@@ -128,7 +134,7 @@ export async function GET(req: NextRequest) {
             <div style="padding: 32px 24px;">
               <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 8px;">Hi Parent,</h2>
               <p style="font-size: 0.95rem; line-height: 1.5; color: #475569; margin-bottom: 24px;">
-                Here is the PracticeMitra weekly progress report for your child profile(s). Review their scores and subtopics needing attention to help them perform better!
+                Here is the PracUp weekly progress report for your child profile(s). Review their scores and subtopics needing attention to help them perform better!
               </p>
               
               ${childSummaries.map(child => `
@@ -189,15 +195,15 @@ export async function GET(req: NextRequest) {
               
               <div style="text-align: center; margin-top: 32px;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard" style="background-color: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; display: inline-block;">
-                  Go to PracticeMitra Dashboard
+                  Go to PracUp Dashboard
                 </a>
               </div>
             </div>
             
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
-              This report was sent to you because your email is linked to an active PracticeMitra Plus or Family/Pro subscription.<br />
-              &copy; ${new Date().getFullYear()} PracticeMitra Inc. All rights reserved.
+              This report was sent to you because your email is linked to an active PracUp Plus or Family/Pro subscription.<br />
+              &copy; ${new Date().getFullYear()} PracUp (pracup.co.in). All rights reserved.
             </div>
           </div>
         </div>
@@ -206,9 +212,9 @@ export async function GET(req: NextRequest) {
       if (isEmail && smtpConfigured) {
         try {
           await transporter.sendMail({
-            from: `"PracticeMitra Admin" <${process.env.SMTP_USER}>`,
+            from: smtpFrom,
             to: contact,
-            subject: "PracticeMitra Weekly Student Progress Summary",
+            subject: "PracUp Weekly Student Progress Summary",
             html: emailBody
           });
           reportsSent.push({ contact, childCount: childSummaries.length, status: "sent_email" });

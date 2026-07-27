@@ -119,7 +119,7 @@ export async function POST(
 
     if (needsSolving) {
       logDebugInfo(`[POST Review] Worksheet is missing answers. Generating solved content via LLM...`);
-      const solveSystemPrompt = `You are PracticeMitra AI, an expert school textbook editor.
+      const solveSystemPrompt = `You are PracUp AI, an expert school textbook editor.
 Your task is to take a school worksheet that is missing its answer key and solution explanations, solve all the questions, and return the complete worksheet JSON containing the correct answers and detailed explanations.
 
 ORIGINAL WORKSHEET (MISSING ANSWERS):
@@ -338,7 +338,7 @@ ${allQuestions.map((q, idx) => {
       });
     } else {
       // LLM grading pathway
-      const systemPrompt = `You are PracticeMitra AI, an expert school workbook reviewer.
+      const systemPrompt = `You are PracUp AI, an expert school workbook reviewer.
 Your job is to grade a student's worksheet submission against the original worksheet content and correct answer key.
 
 Worksheet Subject: ${worksheet.subject}

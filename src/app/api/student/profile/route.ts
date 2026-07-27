@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     if (!defaultUser) {
       defaultUser = await prisma.user.create({
         data: {
-          email: "user@practicemitra.in",
+          email: "user@pracup.co.in",
           passwordHash: "default-placeholder-hash"
         }
       });

@@ -139,8 +139,8 @@ export async function queryOpenRouter(
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "https://practicemitra.in",
-                "X-Title": "PracticeMitra",
+                "HTTP-Referer": "https://pracup.co.in",
+                "X-Title": "PracUp",
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
@@ -230,8 +230,8 @@ export async function queryOpenRouter(
             method: "POST",
             headers: {
               "Authorization": `Bearer ${apiKey}`,
-              "HTTP-Referer": "https://practicemitra.in",
-              "X-Title": "PracticeMitra",
+              "HTTP-Referer": "https://pracup.co.in",
+              "X-Title": "PracUp",
               "Content-Type": "application/json"
             },
             body: JSON.stringify({

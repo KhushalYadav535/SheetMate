@@ -90,7 +90,7 @@ export default function WorksheetPage() {
     const msgs = [
       "Uploading solved PDF/Image sheet...",
       "Extracting text solutions using local OCR...",
-      "Sending content to PracticeMitra AI reviewer...",
+      "Sending content to PracUp AI reviewer...",
       "Comparing responses to correct answers...",
       "Calculating final score & subtopic logs..."
     ];
@@ -260,13 +260,13 @@ export default function WorksheetPage() {
 
       // Update guest history in sessionStorage if applicable
       try {
-        const guestHistoryStr = sessionStorage.getItem("practicemitra_guest_history");
+        const guestHistoryStr = sessionStorage.getItem("pracup_guest_history");
         if (guestHistoryStr) {
           const history = JSON.parse(guestHistoryStr);
           const index = history.findIndex((item: any) => item.id === id);
           if (index !== -1) {
             history[index].score = updatedData.score;
-            sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(history));
+            sessionStorage.setItem("pracup_guest_history", JSON.stringify(history));
           }
         }
       } catch (e) {
@@ -315,13 +315,13 @@ export default function WorksheetPage() {
 
       // Update guest history in sessionStorage if applicable
       try {
-        const guestHistoryStr = sessionStorage.getItem("practicemitra_guest_history");
+        const guestHistoryStr = sessionStorage.getItem("pracup_guest_history");
         if (guestHistoryStr) {
           const history = JSON.parse(guestHistoryStr);
           const index = history.findIndex((item: any) => item.id === id);
           if (index !== -1) {
             history[index].score = data.score;
-            sessionStorage.setItem("practicemitra_guest_history", JSON.stringify(history));
+            sessionStorage.setItem("pracup_guest_history", JSON.stringify(history));
           }
         }
       } catch (e) {
@@ -442,7 +442,7 @@ export default function WorksheetPage() {
   };
 
   const handlePrintWorksheet = () => {
-    downloadPDF(false, `PracticeMitra_Worksheet_${data.grade.replace(/\s+/g, "_")}_${data.subject}.pdf`);
+    downloadPDF(false, `PracUp_Worksheet_${data.grade.replace(/\s+/g, "_")}_${data.subject}.pdf`);
   };
 
   const handlePrintSolutions = () => {
@@ -450,7 +450,7 @@ export default function WorksheetPage() {
       setShowUpgradeModal(true);
       return;
     }
-    downloadPDF(true, `PracticeMitra_Solutions_${data.grade.replace(/\s+/g, "_")}_${data.subject}.pdf`);
+    downloadPDF(true, `PracUp_Solutions_${data.grade.replace(/\s+/g, "_")}_${data.subject}.pdf`);
   };
 
   if (loading) {
@@ -776,7 +776,7 @@ export default function WorksheetPage() {
 
           {/* Footer watermark */}
           <div style={{ borderTop: "2px solid #000", paddingTop: "12px", marginTop: "40px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#475569" }}>
-            <span>Generated for free on <strong>practicemitra.in</strong></span>
+            <span>Generated for free on <strong>pracup.co.in</strong></span>
             <span>Study regular, score high!</span>
           </div>
 
@@ -898,7 +898,7 @@ export default function WorksheetPage() {
               fontSize: "0.8rem",
               color: "var(--accent-purple)"
             }}>
-              🎉 <strong>Beta Offer:</strong> Create a student profile today and get lifetime Pro access for <strong>100% FREE</strong> (Normal price: ₹800/mo).
+              🎉 <strong>Special Offer:</strong> Create a student profile today to save progress, track accuracy, and unlock detailed solution keys!
             </div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button 
