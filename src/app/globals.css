@@ -450,11 +450,31 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: space-between;
     border-radius: 24px;
-    padding: 14px 20px;
+    padding: 8px 16px;
     width: calc(100% - 20px);
-    max-height: 58px;
+    max-height: 54px;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tubelight-brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    height: 36px;
+  }
+
+  .brand-logo-badge {
+    padding: 2px 8px !important;
+    border-radius: 10px !important;
+    height: 32px !important;
+  }
+
+  .tubelight-brand-logo,
+  .brand-logo-horizontal {
+    height: 26px !important;
+    max-width: 140px !important;
   }
 
   .tubelight-nav.open {
@@ -828,6 +848,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap !important;
   transition: color 0.3s ease;
 }
 

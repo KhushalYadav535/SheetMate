@@ -98,8 +98,10 @@ export async function GET(req: NextRequest) {
         generationQuotaReached = true;
       }
 
+      let detailedCount = 0;
+      let extraBoosterCredits = 0;
       if (contact) {
-        const detailedCount = await prisma.evaluationLog.count({
+        detailedCount = await prisma.evaluationLog.count({
           where: {
             parentContact: contact,
             type: "DETAILED",
@@ -107,21 +109,54 @@ export async function GET(req: NextRequest) {
           }
         });
 
-        if (detailedCount >= evalLimit) {
-          const now = new Date();
-          const activeCredits = await prisma.creditPurchase.findMany({
-            where: {
-              parentContact: contact,
-              creditsRemaining: { gt: 0 },
-              expiresAt: { gte: now }
-            }
-          });
-
-          if (activeCredits.length === 0) {
-            evaluationQuotaReached = true;
+        const now = new Date();
+        const activeCredits = await prisma.creditPurchase.findMany({
+          where: {
+            parentContact: contact,
+            creditsRemaining: { gt: 0 },
+            expiresAt: { gte: now }
           }
+        });
+
+        extraBoosterCredits = activeCredits.reduce((sum, pack) => sum + pack.creditsRemaining, 0);
+
+        if (detailedCount >= evalLimit && activeCredits.length === 0) {
+          evaluationQuotaReached = true;
         }
       }
+
+      return NextResponse.json({
+        profile: {
+          id: profile.id,
+          name: profile.name,
+          grade: profile.grade,
+          board: profile.board,
+          profileType: profile.profileType || "student",
+          parentPin: profile.parentPin,
+          parentEmail: profile.parentEmail,
+          parentPhone: profile.parentPhone,
+          studentPhone: profile.studentPhone,
+          username: profile.username,
+          password: profile.password,
+          securityQuestion: profile.securityQuestion,
+          securityAnswer: profile.securityAnswer,
+          tier
+        },
+        worksheets,
+        weaknesses,
+        generationQuotaReached,
+        evaluationQuotaReached,
+        quotaDetails: {
+          dailyGenerationsUsed: dailyCount,
+          dailyGenerationLimit: dailyLimit,
+          monthlyEvaluationsUsed: detailedCount,
+          monthlyEvaluationLimit: evalLimit,
+          extraBoosterCredits,
+          generationQuotaReached,
+          evaluationQuotaReached
+        },
+        tier
+      });
     }
 
     return NextResponse.json({
@@ -143,8 +178,17 @@ export async function GET(req: NextRequest) {
       },
       worksheets,
       weaknesses,
-      generationQuotaReached,
-      evaluationQuotaReached,
+      generationQuotaReached: false,
+      evaluationQuotaReached: false,
+      quotaDetails: {
+        dailyGenerationsUsed: 0,
+        dailyGenerationLimit: 9999,
+        monthlyEvaluationsUsed: 0,
+        monthlyEvaluationLimit: 9999,
+        extraBoosterCredits: 0,
+        generationQuotaReached: false,
+        evaluationQuotaReached: false
+      },
       tier
     });
 

@@ -53,7 +53,26 @@ export default function DashboardPage() {
   const [subjectFilter, setSubjectFilter] = useState<string>("ALL");
 
   // Tabbed Dashboard state
-  const [activeDashboardTab, setActiveDashboardTab] = useState<"create" | "history" | "concepts" | "analytics">("create");
+  const [activeDashboardTab, setActiveDashboardTab] = useState<"create" | "history" | "concepts" | "analytics" | "plan">("create");
+
+  // Real-time Quota & Usage details
+  const [quotaDetails, setQuotaDetails] = useState<{
+    dailyGenerationsUsed: number;
+    dailyGenerationLimit: number;
+    monthlyEvaluationsUsed: number;
+    monthlyEvaluationLimit: number;
+    extraBoosterCredits: number;
+    generationQuotaReached: boolean;
+    evaluationQuotaReached: boolean;
+  }>({
+    dailyGenerationsUsed: 0,
+    dailyGenerationLimit: 5,
+    monthlyEvaluationsUsed: 0,
+    monthlyEvaluationLimit: 18,
+    extraBoosterCredits: 0,
+    generationQuotaReached: false,
+    evaluationQuotaReached: false
+  });
 
   // Signup Account Type switcher state
   const [regUserType, setRegUserType] = useState<"parent" | "student">("parent");
@@ -450,6 +469,9 @@ export default function DashboardPage() {
         setProfile(data.profile);
         setWorksheets(data.worksheets);
         setWeaknesses(data.weaknesses);
+        if (data.quotaDetails) {
+          setQuotaDetails(data.quotaDetails);
+        }
         if (data.profile?.profileType === "parent") {
           setParentUnlocked(true);
         }
@@ -3302,15 +3324,23 @@ export default function DashboardPage() {
         >
           📊 Analytics
         </button>
+        <button
+          type="button"
+          className={`slider-tab-btn ${activeDashboardTab === "plan" ? "active" : ""}`}
+          onClick={() => setActiveDashboardTab("plan")}
+        >
+          ⚡ Plan & Quotas
+        </button>
         <div
-          className={`slider-tab-indicator ${activeDashboardTab === "analytics" ? "cyan-gradient" : ""}`}
+          className={`slider-tab-indicator ${activeDashboardTab === "analytics" || activeDashboardTab === "plan" ? "cyan-gradient" : ""}`}
           style={{
-            width: "calc(25% - 6px)",
-            transform: `translateX(${
-              activeDashboardTab === "create" ? "0%" :
-              activeDashboardTab === "history" ? "100%" :
-              activeDashboardTab === "concepts" ? "200%" : "300%"
-            })`
+            width: "calc(20% - 4px)",
+            left: activeDashboardTab === "create" ? "2px" :
+                  activeDashboardTab === "history" ? "calc(20% + 2px)" :
+                  activeDashboardTab === "concepts" ? "calc(40% + 2px)" :
+                  activeDashboardTab === "analytics" ? "calc(60% + 2px)" : "calc(80% + 2px)",
+            transform: "none",
+            transition: "left 0.3s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, box-shadow 0.3s ease"
           }}
         />
       </div>
@@ -3900,6 +3930,226 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+    </section>
+  )}
+
+  {activeDashboardTab === "plan" && (
+    <section style={{ maxWidth: "1200px", margin: "0 auto 60px auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "32px" }}>
+        <span style={{
+          fontSize: "0.75rem",
+          fontWeight: 700,
+          color: "var(--accent-purple)",
+          background: "rgba(124, 58, 237, 0.12)",
+          padding: "5px 14px",
+          borderRadius: "20px",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          border: "1px solid rgba(124, 58, 237, 0.2)",
+          display: "inline-block",
+          marginBottom: "12px"
+        }}>
+          ⚡ Subscription & Usage Hub
+        </span>
+        <h2 className="gradient-text" style={{ fontSize: "2rem", marginBottom: "8px" }}>
+          My Plan, Quotas & Add-Ons
+        </h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", maxWidth: "600px", margin: "0 auto" }}>
+          View real-time daily generation counters, monthly detailed review credits, active plan status, and upgrade options.
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px", marginBottom: "32px" }}>
+        {/* Active Subscription Details Card */}
+        <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "28px", border: "1px solid rgba(124, 58, 237, 0.25)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+            <div>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>Current Subscription</span>
+              <h3 style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", margin: "4px 0 0 0" }}>
+                {profile?.tier === "PLUS" ? "PracUp Plus" : profile?.tier === "FAMILY_PRO" ? "PracUp Family" : "Registered Free"}
+              </h3>
+            </div>
+            <span style={{
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.3)",
+              color: "#34d399",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              padding: "4px 10px",
+              borderRadius: "20px"
+            }}>
+              Active 🟢
+            </span>
+          </div>
+
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: "20px" }}>
+            {profile?.tier === "PLUS" 
+              ? "Unlimited worksheet generation, unlimited detailed AI reviews, and priority processing speed."
+              : profile?.tier === "FAMILY_PRO"
+              ? "Up to 5 child profiles, unlimited generations & detailed evaluations, plus full analytics dashboard."
+              : "Free student account with 5 daily worksheets & 18 monthly AI evaluation reviews."}
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+              <span style={{ color: "var(--text-muted)" }}>Billing Rate</span>
+              <strong style={{ color: "var(--text-primary)" }}>
+                {profile?.tier === "PLUS" ? "₹199 / month" : profile?.tier === "FAMILY_PRO" ? "₹349 / month" : "₹0 / Free"}
+              </strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+              <span style={{ color: "var(--text-muted)" }}>Payment Method</span>
+              <strong style={{ color: "var(--accent-cyan)" }}>Razorpay Secure Gateway</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Real-time Usage & Quota Counter Card */}
+        <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "28px", border: "1px solid rgba(6, 182, 212, 0.25)" }}>
+          <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "18px" }}>
+            📊 Real-time Usage & Quota Gauges
+          </h3>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+            {/* Daily Worksheet Generations */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "var(--text-secondary)" }}>📝 Daily Worksheet Generations</span>
+                <strong style={{ color: "var(--accent-cyan)" }}>
+                  {profile?.tier !== "FREE" ? "Unlimited ∞" : `${quotaDetails.dailyGenerationsUsed} / ${quotaDetails.dailyGenerationLimit} Used Today`}
+                </strong>
+              </div>
+              {profile?.tier === "FREE" && (
+                <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{
+                    width: `${Math.min(100, (quotaDetails.dailyGenerationsUsed / quotaDetails.dailyGenerationLimit) * 100)}%`,
+                    height: "100%",
+                    background: quotaDetails.dailyGenerationsUsed >= quotaDetails.dailyGenerationLimit ? "#ef4444" : "var(--accent-cyan)",
+                    transition: "width 0.4s ease"
+                  }} />
+                </div>
+              )}
+            </div>
+
+            {/* Monthly AI Solution Reviews */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "var(--text-secondary)" }}>🔍 Detailed AI Solution Reviews</span>
+                <strong style={{ color: "var(--accent-purple)" }}>
+                  {profile?.tier !== "FREE" ? "Unlimited ∞" : `${quotaDetails.monthlyEvaluationsUsed} / ${quotaDetails.monthlyEvaluationLimit} Used This Month`}
+                </strong>
+              </div>
+              {profile?.tier === "FREE" && (
+                <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{
+                    width: `${Math.min(100, (quotaDetails.monthlyEvaluationsUsed / quotaDetails.monthlyEvaluationLimit) * 100)}%`,
+                    height: "100%",
+                    background: quotaDetails.monthlyEvaluationsUsed >= quotaDetails.monthlyEvaluationLimit ? "#ef4444" : "var(--accent-purple)",
+                    transition: "width 0.4s ease"
+                  }} />
+                </div>
+              )}
+            </div>
+
+            {/* Extra Booster Credits Balance */}
+            <div style={{
+              background: "rgba(124, 58, 237, 0.05)",
+              border: "1px solid rgba(124, 58, 237, 0.15)",
+              borderRadius: "8px",
+              padding: "12px 14px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <div>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Extra Booster Pack Balance</span>
+                <p style={{ margin: "2px 0 0 0", fontSize: "0.95rem", fontWeight: 700, color: "#a78bfa" }}>
+                  +{quotaDetails.extraBoosterCredits} Evaluation Credits
+                </p>
+              </div>
+              <span style={{ fontSize: "1.2rem" }}>⚡</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Plan Upgrade & Booster Purchase Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px" }}>
+        {/* Plus Upgrade Card */}
+        <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "24px", border: "1px solid rgba(124, 58, 237, 0.3)", display: "flex", flexDirection: "column" }}>
+          <h4 style={{ fontSize: "1.1rem", color: "#a78bfa", margin: "0 0 6px 0" }}>PracUp Plus</h4>
+          <div style={{ display: "flex", alignItems: "baseline", marginBottom: "14px" }}>
+            <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>₹199</span>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ month</span>
+          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px 0", fontSize: "0.82rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "8px", flexGrow: 1 }}>
+            <li>✓ Unlimited worksheet generations</li>
+            <li>✓ Unlimited detailed AI solution reviews</li>
+            <li>✓ Weekly parent progress summary emails</li>
+          </ul>
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ width: "100%", padding: "10px", borderRadius: "8px", fontWeight: 700 }}
+            onClick={() => {
+              setShowEditModal(true);
+              setEditProfileTab("billing");
+            }}
+          >
+            {profile?.tier === "PLUS" ? "Active Plan ✓" : "Upgrade to Plus (₹199) 🚀"}
+          </button>
+        </div>
+
+        {/* Family Upgrade Card */}
+        <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "24px", border: "1px solid rgba(6, 182, 212, 0.3)", display: "flex", flexDirection: "column" }}>
+          <h4 style={{ fontSize: "1.1rem", color: "var(--accent-cyan)", margin: "0 0 6px 0" }}>PracUp Family</h4>
+          <div style={{ display: "flex", alignItems: "baseline", marginBottom: "14px" }}>
+            <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>₹349</span>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ month</span>
+          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px 0", fontSize: "0.82rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "8px", flexGrow: 1 }}>
+            <li>✓ Up to 5 Child Profiles</li>
+            <li>✓ Unlimited generations & AI reviews</li>
+            <li>✓ Full Analytics & Weakness Heatmap</li>
+          </ul>
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ width: "100%", padding: "10px", borderRadius: "8px", fontWeight: 700, background: "linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))" }}
+            onClick={() => {
+              setShowEditModal(true);
+              setEditProfileTab("billing");
+            }}
+          >
+            {profile?.tier === "FAMILY_PRO" ? "Active Plan ✓" : "Upgrade to Family (₹349) 👑"}
+          </button>
+        </div>
+
+        {/* Add-On Booster Credit Pack Card */}
+        <div className="glass-card spotlight-card" onMouseMove={handleMouseMove} style={{ padding: "24px", border: "1px solid rgba(16, 185, 129, 0.3)", display: "flex", flexDirection: "column" }}>
+          <h4 style={{ fontSize: "1.1rem", color: "#34d399", margin: "0 0 6px 0" }}>⚡ Booster Pack</h4>
+          <div style={{ display: "flex", alignItems: "baseline", marginBottom: "14px" }}>
+            <span style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)" }}>₹99</span>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginLeft: "4px" }}>/ one-time</span>
+          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px 0", fontSize: "0.82rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "8px", flexGrow: 1 }}>
+            <li>✓ +20 Extra Detailed Evaluation Credits</li>
+            <li>✓ No monthly subscription required</li>
+            <li>✓ Valid for 90 days</li>
+          </ul>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ width: "100%", padding: "10px", borderRadius: "8px", fontWeight: 700, borderColor: "#34d399", color: "#34d399" }}
+            onClick={() => {
+              setShowEditModal(true);
+              setEditProfileTab("billing");
+            }}
+          >
+            Buy Credit Pack (₹99) 💳
+          </button>
+        </div>
+      </div>
     </section>
   )}
 
@@ -4581,12 +4831,12 @@ export default function DashboardPage() {
 
             <form onSubmit={handleEditSubmit}>
               {/* Slider Tabs for Edit Profile Modal */}
-              <div className="slider-tabs-container" style={{ margin: "0 auto 24px auto", background: "rgba(255,255,255,0.02)" }}>
+              <div className="slider-tabs-container" style={{ margin: "0 auto 24px auto", background: "rgba(255,255,255,0.02)", padding: "3px" }}>
                 <button
                   type="button"
                   className={`slider-tab-btn ${editProfileTab === "academic" ? "active" : ""}`}
                   onClick={() => setEditProfileTab("academic")}
-                  style={{ fontSize: "0.8rem", padding: "8px", flex: 1 }}
+                  style={{ fontSize: "0.76rem", padding: "6px 2px", flex: 1, whiteSpace: "nowrap" }}
                 >
                   🎓 Academic
                 </button>
@@ -4594,7 +4844,7 @@ export default function DashboardPage() {
                   type="button"
                   className={`slider-tab-btn ${editProfileTab === "contact" ? "active" : ""}`}
                   onClick={() => setEditProfileTab("contact")}
-                  style={{ fontSize: "0.8rem", padding: "8px", flex: 1 }}
+                  style={{ fontSize: "0.76rem", padding: "6px 2px", flex: 1, whiteSpace: "nowrap" }}
                 >
                   👨‍👩‍👧 Contact
                 </button>
@@ -4602,29 +4852,38 @@ export default function DashboardPage() {
                   type="button"
                   className={`slider-tab-btn ${editProfileTab === "security" ? "active" : ""}`}
                   onClick={() => setEditProfileTab("security")}
-                  style={{ fontSize: "0.8rem", padding: "8px", flex: 1 }}
+                  style={{ fontSize: "0.76rem", padding: "6px 2px", flex: 1, whiteSpace: "nowrap" }}
                 >
                   🔑 Security
                 </button>
-                {parentUnlocked && (
-                  <button
-                    type="button"
-                    className={`slider-tab-btn ${editProfileTab === "billing" ? "active" : ""}`}
-                    onClick={() => setEditProfileTab("billing")}
-                    style={{ fontSize: "0.8rem", padding: "8px", flex: 1 }}
-                  >
-                    💳 Billing & Plans
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={`slider-tab-btn ${editProfileTab === "billing" ? "active" : ""}`}
+                  onClick={() => {
+                    setEditProfileTab("billing");
+                    const contactToUse = editParentEmail.trim() || editParentPhone.trim() || (profile ? (profile.parentEmail || profile.parentPhone) : "") || profile?.username || "";
+                    if (contactToUse) {
+                      setLoadingBilling(true);
+                      fetch(`/api/billing?contact=${encodeURIComponent(contactToUse)}`)
+                        .then(r => r.json())
+                        .then(data => setBillingInfo(data))
+                        .catch(err => console.warn("Failed to fetch billing info:", err))
+                        .finally(() => setLoadingBilling(false));
+                    }
+                  }}
+                  style={{ fontSize: "0.76rem", padding: "6px 2px", flex: 1, whiteSpace: "nowrap" }}
+                >
+                  💳 Plan & Quotas
+                </button>
                 <div
                   className="slider-tab-indicator"
                   style={{
-                    width: parentUnlocked ? "calc(25% - 6px)" : "calc(33.333% - 6px)",
-                    transform: `translateX(${
-                      editProfileTab === "academic" ? "0%" :
-                      editProfileTab === "contact" ? "100%" :
-                      editProfileTab === "security" ? "200%" : "300%"
-                    })`
+                    width: "calc(25% - 4px)",
+                    left: editProfileTab === "academic" ? "2px" :
+                          editProfileTab === "contact" ? "calc(25% + 2px)" :
+                          editProfileTab === "security" ? "calc(50% + 2px)" : "calc(75% + 2px)",
+                    transform: "none",
+                    transition: "left 0.3s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, box-shadow 0.3s ease"
                   }}
                 />
               </div>
@@ -5063,8 +5322,8 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Tab 4: Billing & Subscriptions */}
-              {editProfileTab === "billing" && parentUnlocked && (
+              {/* Tab 4: Billing, Subscriptions & Quotas */}
+              {editProfileTab === "billing" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   <div style={{
                     background: "rgba(124, 58, 237, 0.05)",
