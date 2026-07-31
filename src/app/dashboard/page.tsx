@@ -3319,14 +3319,14 @@ export default function DashboardPage() {
         </button>
         <button
           type="button"
-          className={`slider-tab-btn ${activeDashboardTab === "analytics" ? "active" : ""}`}
+          className={`slider-tab-btn ${activeDashboardTab === "analytics" ? "active cyan-gradient" : ""}`}
           onClick={() => setActiveDashboardTab("analytics")}
         >
           📊 Analytics
         </button>
         <button
           type="button"
-          className={`slider-tab-btn ${activeDashboardTab === "plan" ? "active" : ""}`}
+          className={`slider-tab-btn ${activeDashboardTab === "plan" ? "active cyan-gradient" : ""}`}
           onClick={() => setActiveDashboardTab("plan")}
         >
           ⚡ Plan & Quotas
@@ -3348,7 +3348,7 @@ export default function DashboardPage() {
       {/* Tab Contents */}
       {activeDashboardTab === "create" && (
         <section style={{ maxWidth: "1200px", margin: "0 auto 60px auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "40px", alignItems: "flex-start" }}>
+          <div className="responsive-dashboard-grid">
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <GeneratorWizard
                 studentProfileId={profileId}
