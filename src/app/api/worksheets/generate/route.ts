@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { queryOpenRouter } from "@/lib/openrouter";
 import { getSystemConfig } from "@/lib/config";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 // Validation lists
 const VALID_BOARDS = ["CBSE"];
@@ -11,6 +12,18 @@ const VALID_DIFFICULTIES = ["EASY", "MEDIUM", "HARD"];
 
 export async function POST(req: NextRequest) {
   try {
+    // Sliding-window rate limit check (10 requests per 60 seconds per IP)
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
+                     req.headers.get("x-real-ip") || 
+                     "127.0.0.1";
+
+    const rateLimit = checkRateLimit(`generate_${clientIp}`, 10, 60000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many worksheet generation requests. Please wait a minute before trying again." },
+        { status: 429 }
+      );
+    }
     const body = await req.json();
     const { studentProfileId, board, grade, subject, topics, difficulty, includeAnswerKey, mcqCount, shortCount, longCount } = body;
     // topics can be string[] (wizard) or string (chat agent legacy)
@@ -52,11 +65,7 @@ export async function POST(req: NextRequest) {
       ? (resolvedMcqCount + resolvedShortCount + resolvedLongCount)
       : (resolvedMcqCount * 1 + resolvedShortCount * 2 + resolvedLongCount * 4);
 
-    // Get client IP for guest rate limiting
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
-                     req.headers.get("x-real-ip") || 
-                     "127.0.0.1";
-
+    // Client IP already extracted above for rate limiting
     let weaknessContext = "";
 
     // Fetch dynamic config

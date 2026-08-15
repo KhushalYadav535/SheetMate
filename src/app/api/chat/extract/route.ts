@@ -3,9 +3,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { queryOpenRouter } from "@/lib/openrouter";
 import prisma from "@/lib/db";
 import { CURRICULUM_DATA, Subject } from "@/lib/curriculumData";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Sliding-window rate limit check (10 requests per 60 seconds per IP)
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
+                     req.headers.get("x-real-ip") || 
+                     "127.0.0.1";
+
+    const rateLimit = checkRateLimit(`chat_${clientIp}`, 10, 60000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many chat extraction requests. Please wait a minute before trying again." },
+        { status: 429 }
+      );
+    }
     const body = await req.json();
     const { messages, profile } = body;
 

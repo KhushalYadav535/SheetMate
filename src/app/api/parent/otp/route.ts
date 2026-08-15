@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`[Nodemailer Parent OTP] Sent real verification email with OTP ${generatedOtp} to ${parentPhone}`);
+        console.log(`[Nodemailer Parent OTP] Sent real verification email to ${parentPhone}`);
 
+        // OMIT OTP payload from JSON response to prevent response leakage
         return NextResponse.json({
           status: "success",
-          otp: generatedOtp,
           message: `Verification code sent to email ${parentPhone}.`
         });
       } catch (smtpError) {
@@ -79,13 +79,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fallback simulation (default behavior for phone numbers or if SMTP credentials missing)
+    // Fallback simulation mode (OMIT OTP payload from JSON response)
     return NextResponse.json({
       status: "success",
-      otp: generatedOtp,
       message: isEmail 
-        ? `[Simulated Notification] Sent verification code ${generatedOtp} to parent email ${parentPhone}`
-        : `[Simulated Notification] Sent verification code ${generatedOtp} to parent mobile number ${parentPhone}`
+        ? `[Simulated Notification] Sent verification code to parent email ${parentPhone}`
+        : `[Simulated Notification] Sent verification code to parent mobile number ${parentPhone}`
     });
 
   } catch (error) {

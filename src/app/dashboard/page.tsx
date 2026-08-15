@@ -311,11 +311,27 @@ export default function DashboardPage() {
     }
 
     const savedId = localStorage.getItem("pracup_profile_id");
-    if (savedId) {
-      setProfileId(savedId);
-    } else {
-      setLoading(false);
-    }
+    
+    // Check authenticated session cookie from server
+    fetch("/api/auth/me")
+      .then(res => {
+        if (res.ok) return res.json();
+        return { authenticated: false };
+      })
+      .then(data => {
+        if (data.authenticated && data.profile) {
+          setProfileId(data.profile.id);
+          setProfile(data.profile);
+        } else if (savedId) {
+          setProfileId(savedId);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (savedId) setProfileId(savedId);
+        else setLoading(false);
+      });
 
     const savedParentPhone = localStorage.getItem("pracup_parent_phone");
     if (savedParentPhone) {
@@ -1403,7 +1419,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogOut = () => {
+  const handleLogOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (_) {}
     localStorage.removeItem("pracup_profile_id");
     localStorage.removeItem("pracup_parent_phone");
     localStorage.setItem("pracup_show_logout_toast", "true");

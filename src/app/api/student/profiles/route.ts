@@ -1,18 +1,19 @@
 // src/app/api/student/profiles/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const contact = searchParams.get("contact")?.trim();
-    const password = searchParams.get("password") || "";
-
-    if (!contact) {
-      // Secure default: return an empty list if no query is provided
-      return NextResponse.json([]);
+    // 1. Authenticate caller session
+    const session = await getSession(req);
+    if (!session || !session.parentContact) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
+    // 2. IGNORE client-supplied `contact` query parameter.
+    // Use verified session parentContact directly as absolute ground truth:
+    const contact = session.parentContact.trim();
     const isEmail = contact.includes("@");
     let searchConditions: any[] = [];
 
@@ -21,7 +22,6 @@ export async function GET(req: NextRequest) {
         { parentEmail: { equals: contact, mode: "insensitive" } }
       ];
     } else {
-      // Extract digits to handle formatting differences
       const digits = contact.replace(/\D/g, "");
       if (digits.length >= 10) {
         const localNum = digits.slice(-10);
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Fetch active and recently soft-deleted profiles associated with the parent's mobile number or email
+    // Fetch active and recently soft-deleted profiles associated strictly with the verified session parent contact
     const profiles = await prisma.studentProfile.findMany({
       where: {
         AND: [
@@ -76,4 +76,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: (error as Error).message || "Internal Server Error" }, { status: 500 });
   }
 }
-

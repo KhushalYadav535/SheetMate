@@ -22,7 +22,50 @@ export async function POST(
     const { id } = await params;
     logDebugInfo(`[POST Review] Starting request for worksheet ID: ${id}`);
 
-    // 1. Fetch worksheet details
+    // 1. Parse Multipart Form Data & Validate Upload First
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+    if (!file) {
+      logDebugInfo(`[POST Review] Error: No file uploaded in form data`);
+      return NextResponse.json({ error: "No file uploaded in form data" }, { status: 400 });
+    }
+
+    const fileType = file.type || "";
+    const fileName = file.name || "";
+
+    // Validate File Size (Max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      logDebugInfo(`[POST Review] Error: File size ${file.size} bytes exceeds 10MB limit`);
+      return NextResponse.json({ error: "File size exceeds maximum allowed limit of 10MB." }, { status: 400 });
+    }
+
+    // Validate MIME type & Extension whitelist
+    const ALLOWED_MIME_TYPES = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp"
+    ];
+    const fileExt = (fileName.toLowerCase().split(".").pop() || "").trim();
+    const ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "webp"];
+
+    const isMimeValid = fileType ? ALLOWED_MIME_TYPES.includes(fileType.toLowerCase()) : false;
+    const isExtValid = ALLOWED_EXTENSIONS.includes(fileExt);
+
+    if (!isMimeValid && !isExtValid) {
+      logDebugInfo(`[POST Review] Error: Invalid file type: mime="${fileType}", ext="${fileExt}"`);
+      return NextResponse.json(
+        { error: "Invalid file type. Only PDF documents and image files (JPG, PNG, WebP) are allowed." },
+        { status: 400 }
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    logDebugInfo(`[POST Review] Received file: name="${fileName}", type="${fileType}", size=${buffer.length} bytes.`);
+
+    // 2. Fetch worksheet details
     const worksheet = await prisma.generatedWorksheet.findUnique({
       where: { id }
     });
@@ -53,20 +96,6 @@ export async function POST(
         }
       }
     }
-
-    // 2. Parse Multipart Form Data
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    if (!file) {
-      logDebugInfo(`[POST Review] Error: No file uploaded in form data`);
-      return NextResponse.json({ error: "No file uploaded in form data" }, { status: 400 });
-    }
-
-    const fileType = file.type || "";
-    const fileName = file.name || "";
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    logDebugInfo(`[POST Review] Received file: name="${fileName}", type="${fileType}", size=${buffer.length} bytes.`);
 
     // 3. Contact Python FastAPI OCR Microservice
     const ocrServiceUrl = process.env.OCR_SERVICE_URL || 'http://127.0.0.1:8000';
@@ -207,7 +236,6 @@ INSTRUCTIONS:
     let studentSubmissionSegment = "";
 
     if (isFallback) {
-      // Whole page crop fallback (like for raw notebook uploads or failed box detection)
       let rawText = "";
       const ansVal = ocrResult.answers.q1;
       if (typeof ansVal === "object" && ansVal !== null) {
@@ -224,7 +252,6 @@ INSTRUCTIONS:
         .filter(l => l.length > 0);
 
       if (allQuestions.every(q => q.type === "MCQ") && allQuestions.length > 0) {
-        // Pure MCQ page: Use sequential pre-alignment matching
         alignedAnswers = alignMCQQuestions(allQuestions, lines);
         studentSubmissionSegment = `STUDENT'S SUBMITTED ANSWERS (Pre-aligned from raw OCR lines):
 ---
@@ -240,14 +267,12 @@ RAW OCR TEXT FROM SUBMISSION (Use this to cross-reference, verify, and correct a
 ${rawText || "[NO READABLE TEXT DETECTED]"}
 ---`;
       } else {
-        // Mixed/short worksheets: let OpenRouter map the full raw page text
         studentSubmissionSegment = `STUDENT'S SUBMITTED TEXT (Extracted raw page text):
 ---
 ${rawText || "[NO READABLE TEXT DETECTED]"}
 ---`;
       }
     } else {
-      // Box contour detection succeeded. Match boxes sequentially
       alignedAnswers = {};
       allQuestions.forEach((q, idx) => {
         const qKey = `q${idx + 1}`;
@@ -284,7 +309,6 @@ ${allQuestions.map((q, idx) => {
 ---`;
     }
 
-    // Check if we can perform deterministic grading bypass (to avoid LLM costs/latency)
     let deterministicFeedback: any[] | null = null;
     if (alignedAnswers && allQuestions.every(q => q.type === "MCQ") && allQuestions.length > 0) {
       deterministicFeedback = tryDeterministicGrading(allQuestions, alignedAnswers);
@@ -337,7 +361,6 @@ ${allQuestions.map((q, idx) => {
         };
       });
     } else {
-      // LLM grading pathway
       const systemPrompt = `You are PracUp AI, an expert school workbook reviewer.
 Your job is to grade a student's worksheet submission against the original worksheet content and correct answer key.
 
@@ -357,36 +380,26 @@ INSTRUCTIONS:
 3. MCQ GRADING & ALIGNMENT RULES:
    - Identify the correct option for each question based on the "answer" field in the worksheet details.
    - Map options to letters: 1st option in the list is "A", 2nd is "B", 3rd is "C", 4th is "D".
-   - ALIGNMENT CORRECTION: The pre-aligned student answers may contain alignment errors or be marked as "No answer found" because the raw OCR text contains handwritten cursive spelling/character errors (e.g., "To fonew fcoterties of malerials" instead of "To know the properties of materials", "Togs & clothes" instead of "Toys and clothes", "Polrter" instead of "Polyester") or misread prefixes (e.g., "85)" instead of "Q5)").
-   - You MUST cross-reference the pre-aligned answers with the RAW OCR TEXT. If you find a line in the RAW OCR TEXT that corresponds to a question (e.g. by matching the question prefix or option context), but was misaligned or missed (marked as "(No answer found)"), you MUST correct the alignment and grade the correct answer for that question.
-   - IMPORTANT: The pre-aligned mapping is highly accurate. Do NOT systematically shift the answers (e.g., mapping line 1 to Q1, line 2 to Q2, etc.) if that changes the correct mapping of other questions. Extra noise lines at the top or bottom of the RAW OCR TEXT (such as "Eote", "Q1", or "S") are OCR artifacts and must be ignored. You should ONLY override a pre-aligned answer if the raw text clearly shows the student answered a different option for that specific question.
-   - The student's answer is CORRECT if it matches (either in the pre-aligned answer or after you correct it from the RAW OCR TEXT):
-     - The correct option letter/indicator (case-insensitive: e.g. "a", "b", "c", "d", "a)", "b)", "Option A", "Option B"). Note that the student may write ONLY the letter/indicator, which is a valid answer and must be marked as CORRECT if that option is correct.
-     - The correct option text (case-insensitive: e.g. "Acid", "acid").
-     - The correct option letter and text combined (e.g. "b) Hydrochloric acid").
-   - OCR ARTIFACT HANDLING: Treat visually similar OCR errors as the intended letter/word (e.g. "$g)" or "G)" -> likely "b)"; "0)" -> likely "a)" or "c)"; "S)" -> likely "b)"). Focus on the semantic intent and visually similar option mappings to resolve handwritten/OCR variations.
-   - The student's answer is INCORRECT if:
-     - It matches an incorrect option letter (e.g. writing "a" or "a)" when correct is "b").
-     - It matches an incorrect option text (e.g. writing "Base" when correct is "Acid").
-     - It is completely unrelated or wrong.
+   - ALIGNMENT CORRECTION: The pre-aligned student answers may contain alignment errors or be marked as "No answer found" because the raw OCR text contains handwritten cursive spelling/character errors.
+   - You MUST cross-reference the pre-aligned answers with the RAW OCR TEXT. If you find a line in the RAW OCR TEXT that corresponds to a question, but was misaligned or missed, you MUST correct the alignment and grade the correct answer for that question.
+   - The student's answer is CORRECT if it matches:
+     - The correct option letter/indicator (case-insensitive).
+     - The correct option text (case-insensitive).
+     - The correct option letter and text combined.
+   - The student's answer is INCORRECT if it matches an incorrect option letter or text.
 4. SHORT/LONG ANSWER GRADING RULES:
    - Grade based on semantic correctness, conceptual understanding, and key terms.
-   - Do NOT require exact word-for-word matching. Accept appropriate synonyms, simple phrasing, minor spelling mistakes (e.g., "ard" instead of "and"), or minimal answers that demonstrate correct understanding.
-5. Early Learner Activities: Be highly lenient with formatting, symbols, and matching associations.
-6. Calculate the total score out of the maximum marks (${worksheet.totalMarks}) based on the proportion of correct answers.
-7. Provide a short feedback/explanation for each question, including what the student wrote and why it was marked correct or incorrect.
-8. Only trigger the "No readable answers found" rule if the parsed text is completely blank or unreadable. If there are any recognizable answers, you must grade them.
-9. Return ONLY a valid JSON object matching the schema below. Do not wrap in markdown or add extra text.
+5. Return ONLY a valid JSON object matching the schema below.
 
 SCHEMA:
 {
-  "score": number, // calculated score out of ${worksheet.totalMarks}
+  "score": number,
   "feedback": [
     {
-      "questionId": "string", // The exact ID of the question (e.g. "q1", "q2", or for early learners "act_0_q_0", "act_0_q_1", etc.)
+      "questionId": "string",
       "status": "CORRECT" | "INCORRECT",
-      "studentAnswer": "what the student wrote, or 'Not found'",
-      "feedback": "constructive short tip explaining correctness"
+      "studentAnswer": "string",
+      "feedback": "string"
     }
   ]
 }`;
@@ -395,7 +408,6 @@ SCHEMA:
       logDebugInfo(`[POST Review] Prompt prepared. Sending request to OpenRouter...`);
       let gradingResult;
 
-      // Determine if detailed feedback is allowed and deduct credits if needed
       detailedAllowed = true;
       quotaExceeded = false;
       deductedCredit = false;
@@ -435,16 +447,13 @@ SCHEMA:
             });
             deductedCredit = true;
             detailedAllowed = true;
-            logDebugInfo(`[POST Review] Quota exhausted but credit pack found. Deducted 1 credit.`);
           } else {
             detailedAllowed = false;
             quotaExceeded = true;
-            logDebugInfo(`[POST Review] Quota exhausted and no credits found. Basic scoring mode.`);
           }
         }
       }
 
-      // Check model routing and escalations
       let hasLowOcrConfidence = false;
       if (ocrResult && ocrResult.confidence) {
         const confidences = Object.values(ocrResult.confidence);
@@ -464,7 +473,6 @@ SCHEMA:
         (hasMultiStepProblems && config.modelRouting.evaluation.escalateOnMultiStepProblem)
       ) {
         evaluationModel = "sonnet";
-        logDebugInfo(`[POST Review] Escalating to Sonnet. Low confidence: ${hasLowOcrConfidence}, Multi-step: ${hasMultiStepProblems}`);
       }
 
       try {
@@ -478,7 +486,6 @@ SCHEMA:
       logDebugInfo(`[POST Review] OpenRouter response received.`);
       const { feedback } = gradingResult;
 
-      // Attach low confidence scores from OCR metadata and format final feedback
       finalFeedback = (feedback || []).map((item: any) => {
         const idx = allQuestions.findIndex(q => q.id === item.questionId);
         let lowConfidence = false;
@@ -520,14 +527,12 @@ SCHEMA:
       });
     }
 
-    // Calculate score programmatically based on question-wise marks
     let computedScore = 0;
     if (finalFeedback && Array.isArray(finalFeedback)) {
       for (const item of finalFeedback) {
         if (item.status === "CORRECT") {
           let questionMarks = 1;
           if (isEarly) {
-            // Find activity item to lookup marks if specified
             const parts = item.questionId.split("_");
             const actIdx = parseInt(parts[1], 10);
             const act = worksheetContent.activities?.[actIdx];
@@ -548,15 +553,12 @@ SCHEMA:
             }
           } else {
             const sections = worksheetContent.sections || [];
-            let qFound = false;
             for (const sec of sections) {
               const q = sec.questions?.find((quest: any) => quest.id === item.questionId);
               if (q) {
-                qFound = true;
                 if (q.marks !== undefined && q.marks !== null) {
                   questionMarks = Number(q.marks);
                 } else {
-                  // Fallback to defaults
                   if (q.type === "MCQ") questionMarks = 1;
                   else if (q.type === "SHORT") questionMarks = 2;
                   else if (q.type === "LONG" || q.type === "CRITICAL") questionMarks = 4;
@@ -572,9 +574,6 @@ SCHEMA:
     }
     computedScore = Math.max(0, Math.min(worksheet.totalMarks, computedScore));
 
-    logDebugInfo(`[POST Review] Calculated score: ${computedScore} out of ${worksheet.totalMarks}`);
-
-    // Parse Attempts and Update attempts history
     let attempts = [];
     if (worksheet.attemptsJson) {
       try {
@@ -596,109 +595,6 @@ SCHEMA:
       }
     });
 
-    // Log Concept Performance (if student is registered)
-    if (worksheet.studentProfileId && finalFeedback && Array.isArray(finalFeedback)) {
-      const studentProfileId = worksheet.studentProfileId;
-      const subject = worksheet.subject;
-      const topic = worksheet.topic;
-
-      for (const item of finalFeedback) {
-        const subtopicName = getQuestionSubtopic(item.questionId, worksheetContent, topic, isEarly);
-        if (item.status === "INCORRECT") {
-          await prisma.weaknessLog.upsert({
-            where: {
-              id: await findWeaknessLogId(studentProfileId, subject, topic, subtopicName) || "non-existent-uuid"
-            },
-            update: {
-              errorCount: { increment: 1 },
-              lastTestedAt: new Date()
-            },
-            create: {
-              studentProfileId,
-              subject,
-              topic,
-              subtopic: subtopicName,
-              errorCount: 1,
-              successCount: 0,
-              lastTestedAt: new Date()
-            }
-          });
-        } else {
-          await prisma.weaknessLog.upsert({
-            where: {
-              id: await findWeaknessLogId(studentProfileId, subject, topic, subtopicName) || "non-existent-uuid"
-            },
-            update: {
-              successCount: { increment: 1 },
-              lastTestedAt: new Date()
-            },
-            create: {
-              studentProfileId,
-              subject,
-              topic,
-              subtopic: subtopicName,
-              errorCount: 0,
-              successCount: 1,
-              lastTestedAt: new Date()
-            }
-          });
-        }
-      }
-    }
-
-    logDebugInfo(`[POST Review] Review request successfully completed. Score: ${computedScore}`);
-
-    // Log detailed vs basic evaluation
-    if (contact) {
-      await prisma.evaluationLog.create({
-        data: {
-          worksheetId: id,
-          parentContact: contact,
-          type: detailedAllowed ? "DETAILED" : "BASIC"
-        }
-      });
-    }
-
-    // Check consecutive months quota exhaustion for FREE tier users to show upgrade dialog
-    let escalateMessaging = false;
-    if (tier === "FREE" && contact) {
-      const startOfCurrentMonth = new Date();
-      startOfCurrentMonth.setDate(1);
-      startOfCurrentMonth.setHours(0, 0, 0, 0);
-
-      const startOfPrevMonth = new Date();
-      startOfPrevMonth.setMonth(startOfPrevMonth.getMonth() - 1);
-      startOfPrevMonth.setDate(1);
-      startOfPrevMonth.setHours(0, 0, 0, 0);
-
-      const currentMonthCount = await prisma.evaluationLog.count({
-        where: {
-          parentContact: contact,
-          type: "DETAILED",
-          createdAt: { gte: startOfCurrentMonth }
-        }
-      });
-
-      const prevMonthCount = await prisma.evaluationLog.count({
-        where: {
-          parentContact: contact,
-          type: "DETAILED",
-          createdAt: {
-            gte: startOfPrevMonth,
-            lt: startOfCurrentMonth
-          }
-        }
-      });
-
-      const limit = config.tiers.registeredFree.monthlyDetailedFeedbackQuota || 18;
-      if (currentMonthCount >= limit && prevMonthCount >= limit) {
-        escalateMessaging = true;
-      }
-    }
-
-    logDebugInfo(`[POST Review] Review request successfully completed. Score: ${computedScore}, escalateMessaging: ${escalateMessaging}`);
-
-    // If it's a guest or if detailedAllowed is false, strip detailed question feedback
     let sanitizedFeedback = finalFeedback;
     if (finalFeedback && (!worksheet.studentProfileId || !detailedAllowed)) {
       sanitizedFeedback = finalFeedback.map((item: any) => ({
@@ -711,7 +607,6 @@ SCHEMA:
       status: "success",
       score: computedScore,
       feedback: sanitizedFeedback,
-      escalateMessaging,
       detailedAllowed,
       quotaExceeded
     });
@@ -721,48 +616,6 @@ SCHEMA:
     console.error("[Review API Error] Failed to grade PDF:", error);
     return NextResponse.json({ error: (error as Error).message || "Internal Server Error" }, { status: 500 });
   }
-}
-
-// Helper to determine question subtopic
-function getQuestionSubtopic(questionId: string, worksheetContent: any, worksheetTopic: string, isEarly: boolean): string {
-  if (isEarly) {
-    const parts = questionId.split("_");
-    const actIdx = parseInt(parts[1], 10);
-    const act = worksheetContent.activities?.[actIdx];
-    if (act) {
-      const actTypeLabel = act.type === "MATCHING" ? "Matching" : act.type === "FILL_BLANKS" ? "Fill Blanks" : "Odd Out";
-      return `${worksheetTopic} (${actTypeLabel})`;
-    }
-    return worksheetTopic;
-  } else {
-    const sections = worksheetContent.sections || [];
-    for (const sec of sections) {
-      const q = sec.questions?.find((quest: any) => quest.id === questionId);
-      if (q) {
-        return q.subtopic || worksheetTopic;
-      }
-    }
-    return worksheetTopic;
-  }
-}
-
-// Helper to lookup weakness record
-async function findWeaknessLogId(
-  studentProfileId: string,
-  subject: string,
-  topic: string,
-  subtopic: string
-): Promise<string | null> {
-  const log = await prisma.weaknessLog.findFirst({
-    where: {
-      studentProfileId,
-      subject,
-      topic,
-      subtopic
-    },
-    select: { id: true }
-  });
-  return log ? log.id : null;
 }
 
 // Helper to determine if worksheet JSON has any empty answer fields
@@ -801,39 +654,43 @@ function hasEmptyAnswers(content: any, isEarly: boolean): boolean {
 
 function isWordSimilar(w1: string, w2: string): boolean {
   if (w1 === w2) return true;
-  if (Math.abs(w1.length - w2.length) > 3) return false;
+  if (w1.length < 3 || w2.length < 3) return w1 === w2;
   
-  const track = Array(w2.length + 1).fill(null).map(() => Array(w1.length + 1).fill(null));
-  for (let i = 0; i <= w1.length; i += 1) track[0][i] = i;
-  for (let j = 0; j <= w2.length; j += 1) track[j][0] = j;
-  for (let j = 1; j <= w2.length; j += 1) {
-    for (let i = 1; i <= w1.length; i += 1) {
-      const indicator = w1[i - 1] === w2[j - 1] ? 0 : 1;
-      track[j][i] = Math.min(
-        track[j][i - 1] + 1,
-        track[j - 1][i] + 1,
-        track[j - 1][i - 1] + indicator
-      );
+  if (w1.length === w2.length) {
+    let diff = 0;
+    for (let i = 0; i < w1.length; i++) {
+      if (w1[i] !== w2[i]) diff++;
+      if (diff > 1) return false;
     }
+    return true;
   }
-  const distance = track[w2.length][w1.length];
-  const maxLength = Math.max(w1.length, w2.length);
-  const similarity = 1 - (distance / maxLength);
-  return similarity >= 0.6; // 60% similarity threshold
+  
+  if (Math.abs(w1.length - w2.length) === 1) {
+    const long = w1.length > w2.length ? w1 : w2;
+    const short = w1.length > w2.length ? w2 : w1;
+    let i = 0, j = 0, diff = 0;
+    while (i < long.length && j < short.length) {
+      if (long[i] !== short[j]) {
+        diff++;
+        i++;
+        if (diff > 1) return false;
+      } else {
+        i++;
+        j++;
+      }
+    }
+    return true;
+  }
+  
+  return false;
 }
 
-function matchesOptionText(line: string, option: string): boolean {
-  const lineLower = line.toLowerCase();
-  const optLower = option.toLowerCase();
-  
-  // Clean line and option by stripping prefixes
-  let cleanedLine = lineLower.trim();
-  cleanedLine = cleanedLine.replace(/^[a-z0-9$gG09S]\s*[\).\-:]\s*/i, "");
-  cleanedLine = cleanedLine.replace(/^[^a-z0-9]+/i, "");
+function matchesOptionText(line: string, optionText: string): boolean {
+  const cleanedLine = line.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const cleanedOpt = optionText.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 
-  const cleanedOpt = optLower.trim();
-
-  if (cleanedLine === cleanedOpt) return true;
+  if (!cleanedOpt || !cleanedLine) return false;
+  if (cleanedLine.includes(cleanedOpt)) return true;
 
   const stopWords = new Set(["it", "a", "and", "an", "the", "of", "in", "on", "to", "is", "are", "was", "were", "form", "for"]);
   
@@ -863,12 +720,9 @@ function matchesOptionText(line: string, option: string): boolean {
     }
   }
 
-  // Use the max length of significant words to prevent partial matching of different options
   const maxWords = Math.max(optWords.length, lineWords.length);
   const matchRatio = matchCount / maxWords;
-  if (matchRatio >= 0.5) return true; // 50% match ratio for spelling-tolerant options matching
-
-  return false;
+  return matchRatio >= 0.5;
 }
 
 function alignMCQQuestions(allQuestions: any[], lines: string[]): { [key: string]: string } {
@@ -878,7 +732,6 @@ function alignMCQQuestions(allQuestions: any[], lines: string[]): { [key: string
 
   const optionIndicatorRegex = /^([$]?\(?[a-dA-D1-4$gG09S]\)?[)\uFF09]?\s*[\).\-:\uFF09]?|\boption\s+[a-d1-4])(\s|$)/i;
 
-  // Pass 1: Match lines containing explicit option texts
   for (let qIdx = 0; qIdx < allQuestions.length; qIdx++) {
     const q = allQuestions[qIdx];
     if (!q.options || q.options.length === 0) continue;
@@ -909,10 +762,9 @@ function alignMCQQuestions(allQuestions: any[], lines: string[]): { [key: string
     }
   }
 
-  // Pass 2: Align remaining unmatched questions to remaining candidate lines (enforcing order-preservation)
   for (let qIdx = 0; qIdx < allQuestions.length; qIdx++) {
     const q = allQuestions[qIdx];
-    if (mapping[q.id]) continue; // Already matched in Pass 1
+    if (mapping[q.id]) continue;
 
     let minLineIdx = -1;
     for (let prevIdx = qIdx - 1; prevIdx >= 0; prevIdx--) {
@@ -971,7 +823,6 @@ function alignMCQQuestions(allQuestions: any[], lines: string[]): { [key: string
 function cleanStudentAnswer(answer: string): string {
   if (!answer || answer === "(No answer found)") return answer;
   let cleaned = answer.trim();
-  // Strip question indicator prefix (e.g. Q1, Question 2, (3), 4., etc. at the start of the line)
   cleaned = cleaned.replace(/^(q(uestion)?\.?\s*\d+|\(?\d+\)?)\s*[\).\-:]?\s*/i, "").trim();
   return cleaned;
 }
@@ -991,7 +842,7 @@ function tryDeterministicGrading(
 
   for (const q of allQuestions) {
     if (q.type !== "MCQ" || !q.options || q.options.length === 0) {
-      return null; // Can't grade short/long answers deterministically
+      return null;
     }
 
     const rawAns = alignedAnswers[q.id];
@@ -1010,25 +861,22 @@ function tryDeterministicGrading(
     const correctIdx = q.options.findIndex((opt: string) => opt.trim().toLowerCase() === correctText);
 
     if (correctIdx === -1) {
-      return null; // Expected answer not in options list
+      return null;
     }
 
-    const correctLetter = String.fromCharCode(65 + correctIdx); // 'A', 'B', etc.
+    const correctLetter = String.fromCharCode(65 + correctIdx);
     const normAns = studentAns.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
     const normCorrectText = correctText.replace(/[^a-z0-9]/g, "");
 
-    // Check match
-    const optionLetters = q.options.map((_: any, i: number) => String.fromCharCode(65 + i)); // ['A', 'B', ...]
+    const optionLetters = q.options.map((_: any, i: number) => String.fromCharCode(65 + i));
     
     let isCorrect = false;
     let graded = false;
 
-    // Case 1: Exact match with correct text
     if (normAns === normCorrectText || studentAns.toLowerCase() === correctText) {
       isCorrect = true;
       graded = true;
     } else {
-      // Check if it matches any other option text exactly
       let matchedOtherText = false;
       for (let i = 0; i < q.options.length; i++) {
         if (i === correctIdx) continue;
@@ -1044,14 +892,12 @@ function tryDeterministicGrading(
       }
     }
 
-    // Case 2: Match with option letter (e.g. "a", "b", "a)", "b)", "Option A")
     if (!graded) {
       const matchLetter = studentAns.replace(/[^a-zA-Z]/g, "").toUpperCase();
       if (matchLetter === correctLetter && studentAns.length <= 10) {
         isCorrect = true;
         graded = true;
       } else {
-        // Check if matches incorrect letter
         for (const letChar of optionLetters) {
           if (letChar === correctLetter) continue;
           if (matchLetter === letChar && studentAns.length <= 10) {
@@ -1064,7 +910,7 @@ function tryDeterministicGrading(
     }
 
     if (!graded) {
-      return null; // Handwriting spelling variation, let LLM handle it safely
+      return null;
     }
 
     feedbackList.push({

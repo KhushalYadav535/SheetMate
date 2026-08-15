@@ -1,6 +1,8 @@
+// src/app/api/student/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { createSessionToken, attachSessionCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,7 +48,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const parentContact = (profile.parentPhone || profile.parentEmail || "").trim();
+
+    // Create session token
+    const token = createSessionToken({
+      profileId: profile.id,
+      parentContact,
+      name: profile.name,
+      role: profile.profileType || "student"
+    });
+
+    const response = NextResponse.json({
       status: "success",
       profileId: profile.id,
       name: profile.name,
@@ -54,6 +66,9 @@ export async function POST(req: NextRequest) {
       board: profile.board,
       profileType: profile.profileType || "student"
     });
+
+    // Attach HttpOnly cookie
+    return attachSessionCookie(response, token);
 
   } catch (error) {
     console.error("[Login API Error] Failed to authenticate student profile:", error);

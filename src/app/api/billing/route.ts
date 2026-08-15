@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getSystemConfig } from "@/lib/config";
+import crypto from "crypto";
 
 // GET /api/billing?contact=...
 export async function GET(req: NextRequest) {
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, contact: contactInput, tier, autoRenew, paymentId, orderId } = body;
+    const { action, contact: contactInput, tier, autoRenew } = body;
 
     if (!contactInput || !contactInput.trim()) {
       return NextResponse.json({ error: "Missing contact parameter" }, { status: 400 });
@@ -88,6 +89,48 @@ export async function POST(req: NextRequest) {
 
     const contact = contactInput.trim();
     const config = await getSystemConfig();
+
+    const isProduction = process.env.NODE_ENV === "production";
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const isMissingOrPlaceholderSecret = !razorpaySecret || razorpaySecret.includes("your_key_secret");
+
+    // FAIL-CLOSED SECURITY RULE: In production, missing credentials MUST fail closed with HTTP 500
+    if (isProduction && isMissingOrPlaceholderSecret) {
+      return NextResponse.json(
+        { error: "Payment gateway misconfiguration. Live Razorpay key secret is missing." },
+        { status: 500 }
+      );
+    }
+
+    // Dev simulation mode permitted ONLY when NOT in production AND keys are unconfigured
+    const isDevSimulation = !isProduction && isMissingOrPlaceholderSecret;
+
+    if (action === "subscribe" || action === "buy_credits") {
+      if (!isDevSimulation) {
+        const razorpayOrderId = body.razorpayOrderId || body.orderId;
+        const razorpayPaymentId = body.razorpayPaymentId || body.paymentId;
+        const razorpaySignature = body.razorpaySignature || body.signature;
+
+        if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+          return NextResponse.json(
+            { error: "Missing required Razorpay payment verification parameters (razorpayOrderId, razorpayPaymentId, razorpaySignature)." },
+            { status: 400 }
+          );
+        }
+
+        const expectedSignature = crypto
+          .createHmac("sha256", razorpaySecret!)
+          .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+          .digest("hex");
+
+        if (expectedSignature !== razorpaySignature) {
+          return NextResponse.json(
+            { error: "Invalid Razorpay payment signature. Action rejected." },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     if (action === "subscribe") {
       if (!tier || (tier !== "PLUS" && tier !== "FAMILY_PRO")) {

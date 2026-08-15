@@ -2,9 +2,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getSystemConfig } from "@/lib/config";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    // 1. Authenticate caller session
+    const session = await getSession(req);
+    if (!session) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("id");
 
@@ -12,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing student profile ID" }, { status: 400 });
     }
 
-    // 1. Fetch student details
+    // 2. Fetch student details
     const profile = await prisma.studentProfile.findUnique({
       where: { id: profileId }
     });
@@ -21,7 +28,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // 2. Fetch history of generated sheets
+    // 3. Verify session ownership (IDOR Check)
+    const sessionContact = (session.parentContact || "").trim().toLowerCase();
+    const profileEmail = (profile.parentEmail || "").trim().toLowerCase();
+    const profilePhoneDigits = (profile.parentPhone || "").replace(/\D/g, "");
+    const sessionPhoneDigits = sessionContact.replace(/\D/g, "");
+
+    const matchesContact = sessionContact && (
+      (profileEmail && profileEmail === sessionContact) ||
+      (profilePhoneDigits.length >= 10 && sessionPhoneDigits.length >= 10 && profilePhoneDigits.endsWith(sessionPhoneDigits.slice(-10)))
+    );
+
+    const isOwner = profile.id === session.profileId || matchesContact;
+
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission to access this student profile." },
+        { status: 403 }
+      );
+    }
+
+    // 4. Fetch history of generated sheets
     const worksheets = await prisma.generatedWorksheet.findMany({
       where: { studentProfileId: profileId },
       orderBy: { createdAt: "desc" },
@@ -37,7 +64,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 3. Fetch all weakness and progress logs
+    // 5. Fetch all weakness and progress logs
     const weaknesses = await prisma.weaknessLog.findMany({
       where: {
         studentProfileId: profileId
@@ -48,13 +75,16 @@ export async function GET(req: NextRequest) {
       ]
     });
 
-    // 4. Calculate subscription and quota limits
+    // 6. Calculate subscription and quota limits
     const contact = (profile.parentPhone || profile.parentEmail || "").trim();
     const sub = contact ? await prisma.parentSubscription.findUnique({ where: { contact } }) : null;
     const tier = sub?.tier || "FREE";
 
     let generationQuotaReached = false;
     let evaluationQuotaReached = false;
+
+    // Sanitize profile object (strip sensitive credentials before returning to client)
+    const { password, securityAnswer, parentPin, ...sanitizedProfile } = profile;
 
     if (tier === "FREE") {
       const config = await getSystemConfig();
@@ -127,19 +157,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
         profile: {
-          id: profile.id,
-          name: profile.name,
-          grade: profile.grade,
-          board: profile.board,
-          profileType: profile.profileType || "student",
-          parentPin: profile.parentPin,
-          parentEmail: profile.parentEmail,
-          parentPhone: profile.parentPhone,
-          studentPhone: profile.studentPhone,
-          username: profile.username,
-          password: profile.password,
-          securityQuestion: profile.securityQuestion,
-          securityAnswer: profile.securityAnswer,
+          ...sanitizedProfile,
           tier
         },
         worksheets,
@@ -161,19 +179,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       profile: {
-        id: profile.id,
-        name: profile.name,
-        grade: profile.grade,
-        board: profile.board,
-        profileType: profile.profileType || "student",
-        parentPin: profile.parentPin,
-        parentEmail: profile.parentEmail,
-        parentPhone: profile.parentPhone,
-        studentPhone: profile.studentPhone,
-        username: profile.username,
-        password: profile.password,
-        securityQuestion: profile.securityQuestion,
-        securityAnswer: profile.securityAnswer,
+        ...sanitizedProfile,
         tier
       },
       worksheets,
