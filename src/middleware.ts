@@ -29,7 +29,10 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/api/parent/summary") ||
     pathname.startsWith("/api/billing") ||
     pathname.startsWith("/api/student/profile") || // PUT, DELETE, GET profile
-    (pathname.startsWith("/api/worksheets/") && pathname !== "/api/worksheets/generate"); // /api/worksheets/[id], /review, /grade
+    (pathname.startsWith("/api/worksheets/") &&
+     pathname !== "/api/worksheets/generate" &&
+     !(method === "GET" && /^\/api\/worksheets\/[^\/]+$/.test(pathname)) &&
+     !(method === "POST" && /^\/api\/worksheets\/[^\/]+\/review$/.test(pathname))); // Allow guest GET worksheet and POST review
 
   if (isProtected) {
     const token = req.cookies.get("pracup_session")?.value;

@@ -99,6 +99,11 @@ export default function ChatAgent() {
           { role: "assistant", content: "⚙️ Parameters verified! Generating your custom worksheet now..." }
         ]);
 
+        const rawTopic = data.params.topic || "General Topic";
+        const topicsList = Array.isArray(rawTopic)
+          ? rawTopic
+          : String(rawTopic).split(",").map((t: string) => t.trim()).filter(Boolean);
+
         const genRes = await fetch("/api/worksheets/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -107,7 +112,7 @@ export default function ChatAgent() {
             board: data.params.board || "CBSE",
             grade: data.params.grade || "Class 6",
             subject: data.params.subject || "MATH",
-            topics: [data.params.topic || "General Topic"],
+            topics: topicsList.length > 0 ? topicsList : ["General Topic"],
             difficulty: data.params.difficulty || "MEDIUM",
             includeAnswerKey: !!studentProfileId,
             mcqCount: data.params.mcqCount,
