@@ -1900,7 +1900,7 @@ export default function HomePage() {
             },
             {
               q: "Can I use PracUp as a guest without signing up?",
-              a: "Absolutely. You can try our generator as a guest right from the landing page. However, guest generation is limited to 4 worksheets per day, and your child's progress, adaptive learning features, and dashboard stats will not be saved."
+              a: "Absolutely. You can try our generator as a guest right from the landing page. However, guest generation is limited to 1 worksheet per day, and your child's progress, adaptive learning features, and dashboard stats will not be saved."
             }
           ].map((item, index) => {
             const isOpen = openFaqIndex === index;

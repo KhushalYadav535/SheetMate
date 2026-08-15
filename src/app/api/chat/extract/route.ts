@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
           createdAt: { gte: oneDayAgo }
         }
       });
-      const remaining = Math.max(0, 4 - guestSheetCount);
+      const remaining = Math.max(0, 1 - guestSheetCount);
       
-      limitContext = `\nACTIVE USER STATUS:\n- Login Status: Guest User (Not logged in)\n- Daily Worksheet Limit: 4 worksheets per 24 hours\n- Worksheets Generated Today: ${guestSheetCount}\n- Worksheets Remaining: ${remaining} out of 4\nUse this number (${remaining}) as the absolute truth to answer the user if they ask how many worksheets they have left or can generate today. If they have ${remaining} left, explicitly tell them "${remaining} worksheets left". Never make up any other number or guess that they have exhausted their limit unless remaining is 0.`;
+      limitContext = `\nACTIVE USER STATUS:\n- Login Status: Guest User (Not logged in)\n- Daily Worksheet Limit: 1 worksheet per 24 hours\n- Worksheets Generated Today: ${guestSheetCount}\n- Worksheets Remaining: ${remaining} out of 1\nUse this number (${remaining}) as the absolute truth to answer the user if they ask how many worksheets they have left or can generate today. If they have ${remaining} left, explicitly tell them "${remaining} worksheet left". Never make up any other number or guess that they have exhausted their limit unless remaining is 0.`;
     }
 
     const systemPrompt = `You are a helpful, friendly AI worksheet generation and support assistant for PracUp.${profileContext}${limitContext}
@@ -64,7 +64,7 @@ IMPORTANT GUIDELINES:
   1. Default Parent PIN: "0000". Locked parent dashboard features and grading actions require this PIN.
   2. Credentials Recovery: In the main login view, there are "Forgot Username" and "Forgot Password" modal flows that use simulated verification codes sent to the registered parent email/phone to recover credentials.
   3. Edit Profile Modal: Redesigned into three tabs (Academic, Contact, Security). When updating sensitive details like contact methods, security questions/answers, or changing the password, the user must input their current password and current security answer inside the dynamic bottom verification panel.
-  4. Guest Rate Limits: Guest users are limited to 4 worksheets per 24 hours (tracked by client IP). Solution keys and detailed step-by-step explanations are reserved for registered or paid profiles. Creating a profile unlocks higher quotas and features.
+  4. Guest Rate Limits: Guest users are limited to 1 worksheet per 24 hours (tracked by client IP). Solution keys and detailed step-by-step explanations are reserved for registered or paid profiles. Creating a profile unlocks higher quotas and features.
 - Return ONLY a valid JSON object matching the schema below. Do not wrap the JSON in markdown code blocks or output any extra conversational text outside the JSON.
 
 

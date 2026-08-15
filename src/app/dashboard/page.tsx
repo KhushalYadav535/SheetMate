@@ -5238,7 +5238,7 @@ export default function DashboardPage() {
 
                         {deleteReason === "limits" && (
                           <div style={{ background: "rgba(6, 182, 212, 0.05)", border: "1px solid rgba(6, 182, 212, 0.15)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                            💡 <strong>Tip:</strong> Guest users are limited to 4 worksheets per day and don't get solutions. However, creating a student profile is <strong>100% free</strong> and unlocks unlimited sheet generations and detailed answer keys!
+                            💡 <strong>Tip:</strong> Guest users are limited to 1 worksheet per day and don't get solutions. However, creating a student profile is <strong>100% free</strong> and unlocks unlimited sheet generations and detailed answer keys!
                           </div>
                         )}
 
