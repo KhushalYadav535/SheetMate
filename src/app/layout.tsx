@@ -23,12 +23,23 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "PracUp | Practice Today, Level Up Tomorrow",
     description: "Generate customized practice worksheets aligned to LKG to Class 8 syllabus in seconds. Target parent analytics and learning weaknesses automatically.",
     url: "https://pracup.co.in",
     siteName: "PracUp",
     images: [
+      {
+        url: "/meta-icon.png",
+        width: 1024,
+        height: 1024,
+        alt: "PracUp AI school worksheet generator",
+      },
       {
         url: "/finallogo3.png",
         width: 1200,
@@ -43,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "PracUp | Practice Today, Level Up Tomorrow",
     description: "Generate customized practice worksheets aligned to school board syllabus automatically.",
-    images: ["/finallogo3.png"],
+    images: ["/meta-icon.png"],
   },
   robots: {
     index: true,
